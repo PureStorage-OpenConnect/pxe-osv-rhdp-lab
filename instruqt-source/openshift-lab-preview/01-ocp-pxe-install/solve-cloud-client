@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+source /root/.bashrc
+
+# Standard function stubs
+try () {
+    eval "$@"
+}
+log () {
+    echo "$@"
+}
+debug () {
+    echo "$@"
+}
+
+oc create namespace portworx
+oc apply -f /root/ocp-px-operatorgroup.yaml
+oc apply -f /root/ocp-px-operator-subscription.yaml
+
+#Check to make sure the Operator is running
+ until [[ `oc -n portworx get pods -l name=portworx-operator | grep Running | grep 1/1 | wc -l` -eq 1 ]]; do
+         echo "."
+         sleep 10
+ done
+
+echo $INSTRUQT_GCP_PROJECT_GCPPROJECT_SERVICE_ACCOUNT_KEY | base64 -d > gcloud.json
+kubectl -n portworx create secret generic px-gcloud --from-file=gcloud.json
+try "curl -L -s -o px-spec.yaml \"https://install.portworx.com/${PXVERSION}?operator=true&mc=false&kbver=${K8SVERSION}&ns=portworx&b=true&iop=6&s=%22type%3Dpd-standard%2Csize%3D50%22&ce=gce&c=${PX_CLUSTERNAME}&gke=true&stork=true&csi=true&mon=true&tel=false&st=k8s&promop=true\""
+yq -iy '.spec.volumes += [{"name": "gcloud", "mountPath": "/etc/pwx/gce", "secret": {"secretName": "px-gcloud"}}] | .spec.env += [{"name": "GOOGLE_APPLICATION_CREDENTIALS", "value": "/etc/pwx/gce/gcloud.json"}]' px-spec.yaml
+
+yq -iy 'del(.metadata.annotations["portworx.io/is-gke"])' px-spec.yaml
+yq -iy '.metadata.annotations["portworx.io/is-openshift"] = "true"' px-spec.yaml
+
+oc apply -f px-spec.yaml
+
+echo "waiting for portworx to be ready"
+until [[ $(kubectl -n portworx get stc -o jsonpath='{.items[0].status.phase}' 2> /dev/null) == "Running" ]]; do
+    echo "."
+    sleep 10
+done
+
+# Enable the console plugin
+cat << EOF | oc apply -f -
+apiVersion: operator.openshift.io/v1
+kind: Console
+metadata:
+  name: cluster
+spec:
+  plugins:
+    - portworx
+EOF
+
+# Enable the px-csi-db storage class to be the default
+kubectl patch storageclass px-csi-db -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+echo "alias pxctl='PX_POD=\$(kubectl get pods -l name=portworx -n portworx --field-selector=status.phase==Running | grep \"1/1\" | awk \"NR==1{print \$1}\") && kubectl exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl'" >> /root/.profile
+source /root/.profile
+exit 0

@@ -1,0 +1,282 @@
+#!/bin/bash
+
+# Unlink previous cleanup.sh. This is moved so that the check and solve scripts don't have to run the cleanup. So the previous cleanup.sh is moved to the next step's setup
+unlink /root/cleanup.sh
+cat << EOF > cleanup.sh
+#!/bin/bash
+
+source /root/.profile
+
+
+#Check to make sure the worker node is back online and Ready
+until [[ \`kubectl get nodes --no-headers=true | awk '{ print \$2 }' | grep NotReady | wc -l\` -eq 0 ]]; do
+  echo "Waiting for worker node to come back online...."
+  sleep 10
+done
+
+echo "--------------------------------"
+
+#Check to make sure Portworx StorageCluster is optimal health
+until [[ \`pxctl cluster list -j | jq -r '.cluster.Nodes[].Status' | grep 2 | wc -l\` -eq 3 ]]; do
+  echo "Waiting for Portworx cluster to return to optimal health...."
+  sleep 10
+done
+
+echo "--------------------------------"
+
+echo "Kubernetes and Portworx cluster back to optimal health!"
+
+echo "--------------------------------"
+
+echo "Deleting Demo Resources"
+
+echo "--------------------------------"
+kubectl delete -f disk-filler.yaml -n autopilot
+kubectl delete -f disk-filler-pvc.yaml -n autopilot
+kubectl delete -f autopilotrule.yaml
+echo "3" >> cleanup_status.txt
+kubectl delete ns autopilot
+echo "--------------------------------"
+clear
+echo "Cleanup complete - finish the lab by clicking the Check button!"
+EOF
+
+chmod 777 /root/cleanup.sh
+
+cat << EOF >> autopilot.yaml
+# SOURCE: https://install.portworx.com/?comp=autopilot
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autopilot-config
+  namespace: portworx
+data:
+  config.yaml: |-
+    providers:
+       - name: default
+         type: prometheus
+         params: url=http://px-prometheus:9090
+    min_poll_interval: 2
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: autopilot-account
+  namespace: portworx
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
+  labels:
+    tier: control-plane
+  name: autopilot
+  namespace: portworx
+spec:
+  selector:
+    matchLabels:
+      name: autopilot
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        name: autopilot
+        tier: control-plane
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "name"
+                    operator: In
+                    values:
+                    - autopilot
+              topologyKey: "kubernetes.io/hostname"
+      hostPID: false
+      containers:
+      - command:
+        - /autopilot
+        - -f
+        - ./etc/config/config.yaml
+        - -log-level
+        - debug
+        imagePullPolicy: Always
+        image: portworx/autopilot:1.3.14
+        resources:
+          requests:
+            cpu: '0.1'
+        securityContext:
+          privileged: false
+        name: autopilot
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+      serviceAccountName: autopilot-account
+      volumes:
+        - name: config-volume
+          configMap:
+            name: autopilot-config
+            items:
+            - key: config.yaml
+              path: config.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autopilot
+  namespace: portworx
+  labels:
+    name: autopilot-service
+spec:
+  ports:
+    - name: autopilot
+      protocol: TCP
+      port: 9628
+  selector:
+    name: autopilot
+    tier: control-plane
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: autopilot-role
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: autopilot-role-binding
+subjects:
+- kind: ServiceAccount
+  name: autopilot-account
+  namespace: portworx
+roleRef:
+  kind: ClusterRole
+  name: autopilot-role
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+cat << EOF >> disk-filler-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: data
+  labels:
+    app: disk-filler
+spec:
+  storageClassName: px-csi-db
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+EOF
+
+cat << EOF >> disk-filler.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: disk-filler
+  labels:
+    app: disk-filler
+spec:
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: data
+  terminationGracePeriodSeconds: 5
+  containers:
+  - image: busybox
+    imagePullPolicy: Always
+    name: busybox
+    volumeMounts:
+    - name: data
+      mountPath: "/mnt"
+    command:
+      - sh
+    args:
+      - -c
+      - |
+        i=0
+        until [ \$i = 8 ] ; do
+          dd if=/dev/urandom of=/mnt/sample-\$i.txt bs=1G count=1 iflag=fullblock
+          \$(( i++ ))
+          sleep 1
+        done
+        exit
+EOF
+
+cat << EOF >> namespaces.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autopilot
+  labels:
+    type: db
+EOF
+
+cat << EOF >> autopilotrule.yaml
+apiVersion: autopilot.libopenstorage.org/v1alpha1
+kind: AutopilotRule
+metadata:
+ name: volume-resize
+spec:
+  ##### selector filters the objects affected by this rule given labels
+  selector:
+    matchLabels:
+      app: disk-filler
+  ##### namespaceSelector selects the namespaces of the objects affected by this rule
+  namespaceSelector:
+    matchLabels:
+      type: db
+  ##### conditions are the symptoms to evaluate. All conditions are AND'ed
+  conditions:
+    # volume usage should be less than 30%
+    expressions:
+    - key: "100 * (px_volume_usage_bytes / px_volume_capacity_bytes)"
+      operator: Gt
+      values:
+        - "30"
+    for: 5
+  ##### action to perform when condition is true
+  actions:
+  - name: openstorage.io.action.volume/resize
+    params:
+      # resize volume by scalepercentage of current size
+      scalepercentage: "100"
+      # volume capacity should not exceed 20GiB
+      maxsize: "20Gi"
+EOF
+
+kubectl apply -f namespaces.yaml
+sleep 5
+
+until [[ `kubectl get ns -l type=db --no-headers | wc -l` -eq 1 ]]; do
+        kubectl apply -f namespaces.yaml
+        echo "Waiting for autopilot namespace to be created...."
+        sleep 10
+done
+
+#kubectl apply -f autopilot.yaml -n portworx
+
+#until [[ `kubectl get clusterrole autopilot-role --no-headers | wc -l` -eq 1 ]]; do
+#        kubectl apply -f autopilot.yaml -n portworx
+#        echo "Waiting for autopilot to be installed...."
+#        sleep 10
+#done
+
+exit 0
+

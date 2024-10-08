@@ -1,0 +1,24 @@
+slug: openshift-lab-preview
+id: oez2cyau5yex
+title: Openshift Lab Preview
+description: ""
+icon: ""
+tags: []
+owner: portworx
+developers:
+- ccrow@purestorage.com
+timelimit: 28800
+lab_config:
+  overlay: false
+  width: 33
+  position: right
+  feedback_recap_enabled: true
+  loadingMessages: true
+  lab_v2: false
+  theme:
+    name: original
+  override_challenge_layout: false
+  hideStopButton: false
+  default_layout: AssignmentRight
+  default_layout_sidebar_size: 33
+checksum: "4169773454436333006"

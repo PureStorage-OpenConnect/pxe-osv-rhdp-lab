@@ -1,0 +1,3802 @@
+#!/usr/bin/env bash
+
+
+#################################################################
+# Version
+# 0.2.6
+
+# First number: Major changes (re-writes, etc)
+    # When this number increments, all other numbers should be reset to 0
+# Second number: Changes that have been run through dpxd-challenge tests (dpxd-test tracks)
+    # When this number increments, the last number should be reset to 0
+# Third number: TSCC tested changes that have been pushed to dpxd-main
+
+# Because the releases are gated, we know a few things about versioning:
+
+# x.x.0 releases have passed dpxd-challenge tests
+  # These releases will be marked as latest stable
+
+# x.0.0 is the first release of a new major version which is usually a re-write
+  # These releases will be marked as pre-release
+
+# x.x.x releases have passed TSCC tests
+  # These releases will be marked as pre-release
+
+# Append an -alpha for untested changes, append -beta for changes that have had initial testing
+
+# This dpxd-main can be updated with: 'test_scc --track=dpxd-main --pattern=TMEISTHEBESTEVAR'
+
+#################################################################
+# Change log
+
+### 0.1.2 - 07/15/2024
+# - Changed GKE version
+# - TSCC tested and pushed to dpxd-main
+
+
+### 0.1.3 - 7/23/2024 CC
+# - Added gcp_utilserver_create function
+# - added gcp_utilserver_rancher function to install rancher
+# - added gcp_utilserver_rancher_cluster function to create a rancher cluster on GCP hosts. This updates the K8SVERSION variable
+# - changed portworx_install function to detect rancher version and modify spec file
+# - Changed nginx config write function to detect rancher and use a different method to populate IP addresses (sshconfig) as well as add rancher server to port 85
+# - Added wait_ready function
+# - Added get_ip_from_sshconfig function to pull the ip address from SSH config
+
+### 0.1.4 - 7/24/2024 CC
+# - [x] Add release channel to GKE install
+# - [x] Update K8S version var to be dynamic to feed portworx install
+# - added debugging to rancher functions
+
+### 0.2.0 - 8/9/2024 CC
+# - Passed DPXD tests
+
+### 0.2.1 - 8/15/24 CC
+# - [x] fix AGENTCMD null error
+# - [x] create create_gke_cluster_dr function
+# - [x] build cloud drive function
+# - [x] Add wait-raidy timeout
+# - [x] route53 secret
+# - [x] add agent vars to write_bashrc
+# - [x] get mvp of ocp
+# - [x] ocp px operator fixed
+# - [x] added bypass_requirements flag to portworx_install
+# - [x] using portworx_install for all installs
+# - [x] remove portworx_ocp_install
+# - [x] fix nginx for openshift. NGINX should disable on openshift now
+# - [x] get ssh configured for openshift. SSH is configured but a little useless as it uses a private network
+# - [x] Removed wait-ready-ocp_portworx and tested with the generic function
+# - [x] run tscc tests
+
+### 0.2.2 - 08/29/2024 CC
+# - [x] fix async license issue
+# - [x] fix async auth issue
+# - [x] update aws auth secrets
+# - [X] change OCP token to a secret key
+# - [x] Add kubecon meta function
+# - [x] add license to async function, needs to be in a secret
+# - [x] add route53 cleanup
+# - [x] add px license cleanup
+# - [x] fix pxbbq chatbot
+# - [x] use try function for mc alias add
+# - [x] update pxbbq deployment version
+
+### 0.2.3 - 9/3/2024 CC
+# - [x] fix bbqbookkeeper nginx config
+# - [x] add test OCP route. Examples in demo challenge
+# - [x] release ocp cluster. Not sure this is needed, but...
+# - [x] fix firewall so it works with async
+# - [x] ocp auto completion
+
+
+### 0.2.4 - CC and ES 9/13/2024
+# - [x] add INSTRUQT_USER_EMAIL variable to support PDS - The email address is rarely there
+# - [x] add rancher server dns name to route 53
+# - [x] use let's encrypt for rancher server <- Doesn't work and was reverted, see relevent code comments
+# - [x] fix grafana in kubecon2024 track
+# - [x] moved AWS_DNS_ZONE_ID to global vars
+# - [x] fixed ssh config logic for async dr
+# - [x] update pxbackup verions
+# - [x] debug default changed, use the feature flag funcion to flip the bit
+# - [x] added grafana_install function to the kubecon meta function
+# - [x] add create_sa_and_kubeconfig function and configure clusterpair function
+
+### 0.2.5 - 10/1/2024 CC
+
+# - [x] add seperate function to install portworx operator
+# - [x] enabled user workload monitoring in ocp_config function
+# - [x] add cert-manager operator for let's encrypt
+# - [x] configured certificates for ingress
+# - [x] removed try function from aws CLI commands to stop secret leak to logs
+# - [x] changed openshift virtualization to use the try function for the retry mechanic
+# - [x] updated openshift to 4.16
+# - [x] updated openshift operator
+# - [x] move cert-manager manifests to seperate functions to clean up script logic and allow retries
+# - [x] use try function for osv install to retry instead of sleep timers
+# - [x] add OCP PX plugin 
+# - [ ] Rancher tracks are borked, use v0.2.4 for now
+# - [x] added ocp_config_post_pxe function to install portworx after the pxe install
+# - [x] Changed the default storage class to deselect the GCP provided storage class
+# - [x] Increment OCP version to 4.16.15
+# - [x] added hyperconverged overhead spec
+
+
+### 0.2.6 - WIP
+# - [x] added meta_gcp_ocp_pxb function
+# - [x] revert rancher ssl config
+# - [x] add get_ubuntu_image function This populates the UBUNTU_VERSION variable
+# - [x] add feature_OCP_SUPPRESSWARNINGS flag
+# - [x] wrote OCP specific minio_install configs
+# - [x] fixed agent command env vars that were causing .bashrc issues
+# - [x] optimized meta_gcp_ocp_pxe function order
+# - [x] openshift-install command is now using the try function
+
+#################################################################
+# Todo log
+# - [ ] move DEBUG to runtime variable
+# - [ ] minor: might be worth figuring out the kubectl download logic
+# - [x] Add a timeout logic to wait_ready functions
+# - [x] Parameterize the gke_create_cluster function ?!? This will require rewrites of dependencies and children. It would mean less code for async and migration
+# - [ ] for a 1.0 release, we should re-write with parameters
+# - [ ] wildcard cert testing
+# - [ ] context should be explicit
+# - [ ] re-write cleanup-cloud-client with modern scripting convensions
+
+
+
+##### Please read the comments carefully!!!
+
+#################################################################
+# Conventions and examples:
+#
+# Writing .bashrc:
+#  add_bashrc "export K8SVERSION=${K8SVERSION}"
+# This populates an array that will be written to BASHRC at the end of the script
+
+# Using try:
+
+# ARGUMENTS: The first argument is the command you should run. This can be enclosed in ' ' or " ". See the important notes section.
+
+# Flags:
+  # retry=1           the number of times we should attempt the command
+  # term=true        should we terminate the script if the command fails?
+  # gcp=false         should we remove the first region from the GCP_REGIONS array on failure?
+  # fail=false        for debugging, forces the command to fail to test retry logic
+  # wait=1            the number of seconds to wait between retries
+
+# Example: We want to run a gcloud create command that may fail, and use dynamic zone and region variables
+#       This is obviously a fake command
+# try 'gcloud create cluster --region ${GCP_REGIONS[0]} --zone ${zones[0]} --zone ${zones[1]}' retry=3 term=false gcp=true
+# The above would run the command with proper variable substitution (even though we are using ' instead of ")
+# It would try 3 times, not terminate on failure, and remove the first region in the GCP_REGIONS array on failure
+
+# Important Notes:
+
+# Command substitution (GCP=$(SOME COMMAND STRING)) can be done, but it break the simulate functionality. 
+# Try doesn't have to be used for every command, and usually isn't required for looping logic etc.
+# But any command the should exit on a non-zero exit code should use try
+# Try also has the advantage of having robust logging.
+
+
+# A word about quotations with try:
+# try can accept ' ' as it uses the eval command to execute code. 
+# This is done so that variables passed to try can be changed based on internal logic. Currently, this applies to:
+# - GCP region and zone variables.
+# - the K8SVERSION variable
+
+# BUT escape characters do not pass correctly for logging output when using ' '. For example:
+# try 'curl -L -s -o px-spec.yaml "https://install.portworx.com/${PXVERSION}?operator=true&mc=false"' will cause the the debugging output
+# to only display up to the &. The command is passing correctly, but the debug output is not. This is a limitation of the script.
+# This is caused by using ' ' instead of " ". 
+# ' ' is required to pass variables that will be evaluated later, which is required for the GCP region logic and K8SVERSION logic.
+# Here is a handy reference: https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Double-Quotes
+
+
+#####################
+# Function names should be in snake_case
+# <cloud>_<verb>_<object>
+
+# For functions that do not have a specific cloud:
+# <verb>_<object>
+
+# wait_ready_<object> should be used to wait for a service to be ready
+
+# Functions exist in one of a few categories:
+# 1. Primary Functions - These are the main functions that do a set amount of work. Each one should only run once and have logic to check if it has already run
+# 2. Helper Functions - These are functions that are called by other functions. They include the wait_ready scripts, which halts execution until a condition is met
+# 3. Standard Functions - These are standard functions in every scrit: terminate, log, debug, try
+# 4. META Functions - These functions can run workflows, they should consist of more than one primary and helper function.
+# 5. Write file functions - These functions should write a single file
+
+##### Logging
+# debug logging is controlled by the DEBUG variable. If set, any instance of debug "log massage" will output the message.
+# log "log message" will always output the message
+# logv2 "log message" will output a banner and CR before the message. Use this at the beginning of functions
+
+
+#################################################################
+# Configuration Section
+# Enabled the debug function to output
+
+DEBUG=0
+
+# This script will not run properly with set -eo pipefail as we are planning on having commands fail, use the try function instead
+# set -x will output WAAAY too much for this script, use DEBUG=1 instead
+#set -x
+
+# Sets the try function set to simulate mode
+# SIMULATE=0
+# Commenting out the simulate line allows us to run the command with:
+# SIMULATE=1 ./script.sh
+
+
+###########
+# Error Codes
+readonly ERR_DEFAULT=1
+readonly ERR_TRY_FAILED=160
+readonly ERR_NO_GCP_REGIONS_LEFT=161
+readonly ERR_OCP_FEATURE_FLAG=162
+readonly ERR_AWS_FEATURE_FLAG=163
+
+###########
+# Global Variables
+
+SSH_ID_NAME="/root/.ssh/id_rsa_instruqt"
+SSH_ID_NAME_PUB="${SSH_ID_NAME}.pub"
+OCP_INSTALL_DIR="/root/ocp-install"
+OCP_VERSION="4.16.15"
+PXBACKUP_VERSION="2.7.1"
+PXBACKUP_SC="px-csi-db"
+GKE_CLUSTERNAME="portworx-cluster"
+GKE_CLUSTERNAME_DR="portworx-cluster-dr"
+PX_CLUSTERNAME="px-cluster"
+PX_VERSION="3.1"
+AWS_DNS_ZONE_ID="Z00903771OQIK90QR7LAA"
+
+# This is a tricky variable. If the GCP feature flag is enabled, it will be updated with the stable release of GKE within the region, based 
+# on the major.minor version of GKE_VERSION
+# If it is not enabled, it can be overridden by rancher, but not before this version of kubectl is installed. This is important because it does
+# not directly control the rancher version, which is set by the RANCHER_K8S_Version variable. Honestly this variable should not have a value initially, but we need something
+# set to know what version of kubectl to download in the absence of the GCP flag
+K8SVERSION="1.27.14"
+
+GKE_VERSION="1.27"
+BASHRC_FILE="/root/.bashrc"
+MINIO_VERSION="5.2.0"
+MINIO_SC="px-csi-db"
+UTILVM_NAME="util1"
+RANCHER_VERSION="v2.9-head"
+RANCHER_PASSWORD="gr9o3rNpvgrc6lpA"
+RANCHER_SERVER_CONTEXT="rancher"
+RANCHER_K8S_VERSION="v1.28.11+rke2r1"
+RANCHER_CLUSTER_NAME="cluster1"
+UBUNTU_IMAGE_NAME="ubuntu-2204-jammy-v" # this image name is updated by get_ubuntu_image function
+
+
+# This is the amount of loop interations before we break. 10 sec per loop
+WAIT_READY_TIMEOUT=50
+
+
+# Global Vars set at runtime
+SSH_ID_PUB=""
+
+#################################################################
+# Cloud Declaration 
+# Depricated in favor of feature flags
+
+# The above variable sets the cloud for specific functions, such as installing gcp utilities
+# NOTE that the try function needs its own variable passed to start the gcp retry logic
+
+# GCP ZONE Logic
+# We will always use GCP_REGIONS[0]. Failures will result in an unset GCP_REGIONS[0]
+# This means that zones cannot have spaces
+declare -a GCP_REGIONS=("us-central1" "us-west1" "us-east1")
+declare -A GCP_ZONES=( \
+    ["us-central1"]="us-central1-a us-central1-b us-central1-c"\ 
+    ["us-west1"]="us-west1-a us-west1-b us-west1-c"\
+    ["us-east1"]="us-east1-b us-east1-c us-east1-d"\
+    )
+
+# We will populate the following varables to be used, NOTE that these variables are updated by the try function and are safe to use in your functions
+region="${GCP_REGIONS[0]}"
+
+read -a zones <<< "${GCP_ZONES[${region}]}"
+
+
+#################################################################
+# Feature Flags
+# these are used to gate certain features in the script to speed up the process. They are mostly harmless to enable, but if you don't need them, setting them to false will speed up the script.
+feature_OCP=true
+feature_GCP=true
+feature_AWS=true
+feature_GKE=true
+feature_MINIO=true
+feature_CONFIGPXBACKUP=false
+feature_DUMMY=true
+feature_GRAFANA=false
+feature_OCP=true
+
+# These feature flags are changed in two places so far:
+# 1. The conf.sh file for TSCC
+# 2. The var substitution area of def file in the challenge library.
+
+# When should you use a feature flag? When you want to change a configuration for a TRACK, OR, to have a premutation to speed up startup times
+# Feature flags should also be MOSTLY harmless. Don't have enabling a feature flag install OCP for instance, instead have it insteall utils.
+#################################################################
+# Test functions
+
+# The bellow ENV VAR is provided by instruqt under most circumstances
+if [[ SIMULATE == 1 ]]; then
+  log "Simulating, we will now set fake credentials"
+  INSTRUQT_GCP_PROJECT_GCPPROJECT_SERVICE_ACCOUNT_KEY="heaut382u8e9aeu89aeguao9jbj89eaue89aue89aueao89a7u9e8"
+fi
+
+
+#################################################################
+# Standard Functions
+
+log () {
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+}
+
+logv2 () {
+  # Requires log
+  # This adds a banner and CR to the end of the log. Use this at the beginning of functions
+  local log="${1}"
+  shift
+    while [[ "$1" != "" ]]; do
+      PARAM=$(echo $1 | cut -d'=' -f1)
+      VALUE=$(echo $1 | cut -d'=' -f2)
+      case $PARAM in
+        banner)
+          local banner="${VALUE}"
+          debug "banner value passed: ${banner}"
+          ;;
+      esac
+      shift
+    done
+    local func=${FUNCNAME[1]}
+    local banner=${banner:-true}
+    if [[ ${banner} == true ]]; then
+      log ""
+      log "########### ${func} ###########"
+    fi
+    log "$log"
+    log ""
+}
+
+debug () {
+  if [[ ${DEBUG} == 1 ]]; then
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+  fi
+}
+
+terminate () {
+  local msg="${1}"
+  local code="${2:-1}"
+  echo "Error: ${msg}" >&2
+  exit "${code}"
+}
+
+try () {
+  
+  log ""
+  log "#### TRY FUNCTION called from ${FUNCNAME[1]} ####"
+
+
+  # Set variable defaults
+  local retry=1
+  local term=true
+  local gcp=false
+  local fail=false
+  local wait=1
+
+  # Vars
+  log "argument passed: $@"
+  local cmd="${1}"
+  shift
+    while [[ "$1" != "" ]]; do
+      PARAM=$(echo $1 | cut -d'=' -f1)
+      VALUE=$(echo $1 | cut -d'=' -f2)
+      case $PARAM in
+        retry)
+          local retry="${VALUE}"
+          debug "Retry value passed: ${retry}"
+          ;;
+        term)
+          local term="${VALUE}"
+          debug "Term value passed: ${term}"
+          ;;
+        gcp)
+          local gcp="${VALUE}"
+          debug "GCP value passed: ${gcp}"
+          ;;
+        fail)
+          local fail="${VALUE}"
+          debug "Fail value passed: ${fail}"
+          ;;
+        wait)
+          local wait="${VALUE}"
+          debug "Wait value passed: ${wait}"
+          ;;
+      esac
+      shift
+    done
+    debug $(kubectl config get-contexts)
+
+  # While we still have retries remaining
+  while [[ ${retry} -gt 0 ]]; do
+    # Debug
+    debug "VARS:: Retry: ${retry} | Terminate: ${term} | GCP: ${gcp} | Fail: ${fail}"
+    if [[ ${fail} == true ]]; then
+      log "!!Forcing failure!! on command: $(eval echo \"${cmd}\")"
+    fi
+
+    ####### REGION LOGIC
+    # Let's make sure we have a region to try, else terminate
+    if [[ ${GCP_REGIONS[0]} == "" ]]; then
+      terminate "No regions left to try" "${ERR_NO_GCP_REGIONS_LEFT}"
+    else
+      # We have a region, let's update our zones
+      read -a zones <<< "${GCP_ZONES[${GCP_REGIONS[0]}]}"
+      debug "zones = ${zones[@]}"
+    fi
+
+    debug "Starting Command Block"
+    #### CMD BLOCK
+    if [[ $SIMULATE == 1 ]]; then 
+      debug "SIMULATE var set"
+      eval "echo \"Simulating: ${cmd}\""
+    else 
+      debug "SIMULATE var not set - executing command"
+      debug "Running $(eval echo \"${cmd}\")"
+      eval "${cmd}"
+      exit_code=$?
+    fi
+
+    debug "starting exit code evaluation"
+    #### EVALUATE EXIT CODE
+
+    debug "Exit Code: ${exit_code}"
+    if [[ $exit_code -eq 0 ]] && [[ $fail == false ]]; then
+    #### Success Block
+      log "Successfully ran"
+      return 0
+
+    #### FAILURE BLOCK  
+    else
+      log "Failed to run: $(eval echo \"${cmd}\")"
+      log "exit_code: ${exit_code}"
+      retry=$((retry-1))
+
+      ### Should we terminate the script?
+      if [[ ${term} == true ]] && [[ ${retry} == 0 ]]; then
+        terminate "Failed to run: ${cmd}" "${ERR_TRY_FAILED}"
+      fi
+
+      ### Are we messing with GCP Variables that need to be shifted?
+      if [[ ${gcp} == true ]]; then
+        debug "GCP set to true, removing region from GCP_REGIONS"
+        unset GCP_REGIONS[0]
+        read -a GCP_REGIONS <<< "${GCP_REGIONS[@]}"
+        log "Removed region from GCP_REGIONS"
+        log "New GCP_REGIONS: ${GCP_REGIONS[@]}"
+
+        # Rancher's zone updates are automatic as we provided the infrastructure.
+
+        # We need to query the new zone and update the $K8SVERSION variable
+        get_gke_release
+
+        # If we have the OCP feature flag set, update our config files with the new zones
+        if [[ $feature_OCP == true ]]; then
+          log "OCP flag set - Updating OCP Install Config with new zones"
+          # We need to refresh the directories as the installer will not clean up after itself. It also consumes the install-config.yaml file
+          write_ocp_install_config
+        fi
+      fi
+    fi
+    # Just to ensure we don't hammer the API
+    sleep ${wait}
+
+  done
+  log ""
+}
+
+get_gke_release () {
+  # This is a standard function as it will need to be called multiple times
+
+  logv2 "Getting GKE Release"
+  log "#### get_gke_release FUNCTION called from ${FUNCNAME[1]} ####"
+
+  # Requires:
+
+  VALID_GKE_VERSIONS=$(gcloud container get-server-config \
+    --flatten="channels" \
+    --filter="channels.channel=STABLE" \
+    --format="yaml(channels.channel,channels.validVersions)" \
+    --location=${zones[0]}  | yq -c .channels.validVersions[])
+
+  debug "Valid GKE Versions: ${VALID_GKE_VERSIONS}"
+  for version in ${VALID_GKE_VERSIONS}; do
+    if [[ $version =~ $GKE_VERSION ]]; then
+      debug "Found GKE Version: ${version}"
+      debug "K8S VERSION before modification: ${K8SVERSION}"
+      K8SVERSION=$(echo $version | sed -E 's/\"(.*)-gke.*/\1/g')
+      debug "K8S VERSION after modification: ${K8SVERSION}"
+      return 0
+    fi
+  done
+
+}
+
+# Adjusting the tail value will adjust the lookback. For now, this will be N-1
+get_ubuntu_image () {
+  UBUNTU_IMAGE_NAME=$(gcloud compute images list --project ubuntu-os-cloud --no-standard-images --show-deprecated \
+  --filter="name~'ubuntu-2204-jammy-v'" \
+  --format="value(name)" | sort | tail -2 | head -1)
+  debug "Ubuntu Version: ${UBUNTU_IMAGE_NAME}"
+}
+# PXCTL function
+pxctl () {
+  kubectl exec $(kubectl get pods -l name=portworx -n portworx -o jsonpath='{.items[0].metadata.name}') -n portworx -- /opt/pwx/bin/pxctl "$@"
+}
+
+
+# Start the script
+log ""
+log "##################################################"
+log "Starting ${SCRIPT_NAME}"
+
+#################################################################
+# HELPER FUNCTIONS
+# Wait-Ready and Require Functions
+
+wait_ready_bootstrap () {
+  declare -i timer=0
+  logv2 "Waiting for Instruqt to finish booting the VM"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  while [ ! -f /opt/instruqt/bootstrap/host-bootstrap-completed ]
+  do
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_gke_cluster () {
+  declare -i timer=0
+  logv2 "Waiting for our GKE cluster to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  while $(kubectl --context cluster1 get nodes | grep 'metrics.k8s.io/v1beta1'); do 
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_gke_cluster_dr () {
+  declare -i timer=0
+  logv2 "Waiting for our GKE cluster to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  while $(kubectl --context cluster2 get nodes | grep 'metrics.k8s.io/v1beta1'); do 
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_portworx_operator () {
+  declare -i timer=0
+  logv2 "Waiting for the Portworx Operator to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ `kubectl -n portworx get pods -l name=portworx-operator | grep Running | grep 1/1 | wc -l` -eq 1 ]]; do
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_portworx () {
+  declare -i timer=0
+  logv2 "Waiting for portworx to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ $(kubectl -n portworx get stc -o jsonpath='{.items[0].status.phase}' 2> /dev/null) == "Running" ]]; do
+      echo "."
+      sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_pxbackup () {
+  declare -i timer=0
+  logv2 "Waiting for px-backup to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ $(kubectl get po --namespace central --no-headers -ljob-name=pxcentral-post-install-hook  -o json | jq -rc '.items[0].status.phase') == "Succeeded" ]]; do
+      echo "Waiting for post-install hook to succeed..."
+      sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_ocp-px-operator () {
+  declare -i timer=0
+  logv2 "Waiting for the OCP Portworx Operator to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ `kubectl -n portworx get pods -l name=portworx-operator | grep Running | grep 1/1 | wc -l` -eq 1 ]]; do
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_minio () {
+  declare -i timer=0
+  logv2 "Waiting for Minio to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ $(kubectl -n px-minio get deployments.apps px-minio -o json | jq -r '.status.readyReplicas') -le 2 ]]; do
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+  declare -i timer=0
+  logv2 "Waiting for Minio IP to be ready"
+  ip_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+  until [[ $(kubectl -n px-minio get svc px-minio -o json | jq -cr '.status.loadBalancer.ingress[0].ip') =~ $ip_regex ]]; do 
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+  sleep 10
+}
+wait_ready_pxbackup_loadbalancer () {
+  declare -i timer=0
+  logv2 "Waiting for px-backup loadbalancer to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  ip_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+  until [[ $(kubectl -n central get svc px-backup -o json | jq -cr '.status.loadBalancer.ingress[0].ip') =~ $ip_regex ]]; do     echo -n "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_gcp_utilserver_rancher () {
+  declare -i timer=0
+  logv2 "Waiting for the GCP Utilserver Rancher to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ $(curl -k https://$UTIL_IP/ping) == "pong" ]]; do
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_rancher_cluster () {
+  declare -i timer=0
+  logv2 "Waiting for the Rancher Cluster to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ $(kubectl --context ${RANCHER_SERVER_CONTEXT} -n fleet-default get clusters ${RANCHER_CLUSTER_NAME} -o jsonpath='{.status.conditions[?(@.type=="ControlPlaneReady")].status}') == "True" ]]; do
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+
+}
+
+get_host_ip_sshconfig() {
+  local host=$1
+  awk -v host="$host" '
+  $1 == "Host" && $2 == host { in_host_block = 1 }
+  in_host_block && $1 == "Hostname" { print $2; exit }
+  $1 == "Host" && $2 != host { in_host_block = 0 }
+  ' ~/.ssh/config
+}
+add_bashrc () {
+  BASHRC[${#BASHRC[@]}]="${1}"
+  log "Added to BASHRC array: ${1}"
+}
+
+create_sa_and_kubeconfig() {
+    local context=$1  # The kubeconfig context (e.g., cluster1, cluster2)
+    local cluster_name=$2  # The GKE cluster name passed as parameter
+    local zone=$3  # The GKE zone passed as parameter
+    local sa_name="dr-sa"
+    local namespace="portworx"
+    local clusterrolebinding_name="${sa_name}-cluster-admin-binding"
+    local kubeconfig_file="${sa_name}-kubeconfig-${context}"
+    local token_expiration_seconds=$((2 * 24 * 3600))  # 2 days expiration (48 hours)
+
+    echo "Switching to context: $context"
+    kubectl config use-context $context
+
+    # Step 1: Create Service Account (ignore error if it already exists)
+    echo "Creating service account $sa_name in namespace $namespace"
+    kubectl create serviceaccount $sa_name -n $namespace || echo "Service account $sa_name already exists"
+
+    # Step 2: Grant cluster-admin permissions to the service account (ignore error if it already exists)
+    echo "Assigning cluster-admin permissions to $sa_name"
+    kubectl create clusterrolebinding $clusterrolebinding_name \
+      --clusterrole=cluster-admin \
+      --serviceaccount=$namespace:$sa_name || echo "ClusterRoleBinding $clusterrolebinding_name already exists"
+
+    # Step 3: Generate a Token Request for the service account
+    echo "Generating token with expiration"
+    TOKEN=$(kubectl create token $sa_name -n $namespace --duration=${token_expiration_seconds}s)
+
+    # Step 4: Get the API server URL using gcloud
+    echo "Fetching API server URL using gcloud for cluster: $cluster_name in zone: $zone"
+    SERVER_URL=$(gcloud container clusters describe $cluster_name \
+        --zone=$zone \
+        --format="value(endpoint)")
+
+    # Add the protocol to the SERVER_URL
+    SERVER_URL="https://$SERVER_URL"
+
+    # Escape the slashes in SERVER_URL for sed
+    ESCAPED_SERVER_URL=$(echo "$SERVER_URL" | sed 's/\//\\\//g')
+
+    # Step 5: Use gcloud to retrieve the CA certificate for the GKE cluster
+    echo "Fetching CA certificate using gcloud for cluster: $cluster_name in zone: $zone"
+    GKE_CA_CERT=$(gcloud container clusters describe $cluster_name \
+        --zone=$zone \
+        --format="value(masterAuth.clusterCaCertificate)")
+
+    # Step 6: Create the kubeconfig file
+    echo "Creating kubeconfig file for $sa_name"
+
+    # Configure the cluster without the CA certificate, we'll add it manually later
+    kubectl config set-cluster kubernetes \
+      --server=$SERVER_URL \
+      --kubeconfig=$kubeconfig_file
+
+    # Set the credentials using the token
+    kubectl config set-credentials $sa_name \
+      --token=$TOKEN \
+      --kubeconfig=$kubeconfig_file
+
+    # Set the context for the service account
+    kubectl config set-context ${sa_name}-context \
+      --cluster=kubernetes \
+      --user=$sa_name \
+      --namespace=$namespace \
+      --kubeconfig=$kubeconfig_file
+
+    # Use the context
+    kubectl config use-context ${sa_name}-context --kubeconfig=$kubeconfig_file
+
+    # Step 7: Embed the GKE CA certificate into the kubeconfig
+    echo "Embedding CA certificate into kubeconfig"
+
+    # Use sed with escaped server URL to append certificate-authority-data
+    sed -i "/server: $ESCAPED_SERVER_URL/a\ \ \ \ certificate-authority-data: $GKE_CA_CERT" $kubeconfig_file
+
+    echo "Kubeconfig for $sa_name created: $kubeconfig_file"
+}
+
+#################################################################
+# PRIMARY Functions
+write_bashrc () {
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  if [[ $write_bashrc_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requires:
+  collect_config
+
+  logv2 "Writing BASHRC array to .bashrc"
+  for line in "${BASHRC[@]}"; do
+    echo "${line}" >> "${BASHRC_FILE}"
+    debug "Added to ${BASHRC_FILE}: ${line}"
+    if [[ $line == export* ]]; then
+      debug "added agent variable set $(echo "${line}" | awk -F '[ =]' '{print $2 " " $3}')"
+      agent variable set $(echo "${line}" | awk -F '[ =]' '{print $2 " " $3}')
+    fi
+  done
+
+  write_bashrc_ran=true
+}
+
+collect_config () {
+
+  if [[ $collect_config_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Collecting Config"
+  add_bashrc "export K8SVERSION=${K8SVERSION}"
+  add_bashrc "export GKE_CLUSTERNAME=${GKE_CLUSTERNAME}"
+  add_bashrc "export REGION=${GCP_REGIONS[0]}"
+  add_bashrc "export ZONE1=${zones[0]}"
+  add_bashrc "export ZONE2=${zones[1]}"
+  add_bashrc "export ZONE3=${zones[2]}"
+  add_bashrc "export OCP_INSTALL_DIR=${OCP_INSTALL_DIR}"
+  add_bashrc "export OCP_VERSION=${OCP_VERSION}"
+  add_bashrc "export PX_CLUSTERNAME=${PX_CLUSTERNAME}"
+  add_bashrc "export PX_VERSION=${PX_VERSION}"
+  add_bashrc "export PXBACKUP_VERSION=${PXBACKUP_VERSION}"
+  add_bashrc "export PXBACKUP_SC=${PXBACKUP_SC}"
+  add_bashrc "export UTILVM_NAME=${UTILVM_NAME}"
+  add_bashrc "export RANCHER_PASSWORD=${RANCHER_PASSWORD}"
+  add_bashrc "export OCP_NETWORK=${OCP_NETWORK}"
+  add_bashrc "export INSTRUQT_USER_EMAIL=${INSTRUQT_EMAIL_ADDRESS}"
+  add_bashrc "export INSTRUQT_USER_ID=${INSTRUQT_USER_ID}"
+
+
+  debug "BASHRC: ${BASHRC[@]}"
+
+  collect_config_ran=true
+
+}
+
+install_utilities () {
+
+  if [[ $install_utilities_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing utilities"
+
+  if [[ $feature_GCP == true ]]; then
+    log "Installing GCP Utilities"
+    # Add GCP APT source
+    try "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/google-keyring.gpg"
+    try "echo \"deb [signed-by=/usr/share/keyrings/google-keyring.gpg] https://packages.cloud.google.com/apt cloud-sdk main\" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list"
+    log "Updating apt"
+    try "apt-get clean"
+    try "apt-get update"
+    try "apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin"
+
+  fi
+
+  if [[ $feature_OCP == true ]]; then
+    log "Installing OCP Utilities"
+    log "OCP Version: ${OCP_VERSION}"
+    # Todo - add a defined OCP Labels
+    try "wget -q https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_VERSION}/openshift-install-linux.tar.gz"
+    tar zxfv openshift-install-linux.tar.gz
+    unlink openshift-install-linux.tar.gz
+    try "wget -q https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_VERSION}/openshift-client-linux.tar.gz"
+    tar zxfv openshift-client-linux.tar.gz
+    unlink openshift-client-linux.tar.gz
+    unlink README.md
+    cp oc /usr/local/bin
+  fi
+
+  if [[ $feature_AWS == true ]]; then
+    log "Installing AWS Utilities"
+    try "apt-get install -y awscli"
+  fi
+
+  if [[ $feature_MINIO == true ]]; then
+    log "Installing Minio Utilities"
+    wget -q -O /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/mc
+    chmod +x /usr/bin/mc
+  fi
+
+  log "Updating apt"
+  try "apt-get clean"
+  try "apt-get update"
+  try "apt-get install -y jq yq bash-completion"
+
+
+  # Install kubectl
+  log "K8S Version: ${K8SVERSION}"
+  try "curl -sLO \"https://dl.k8s.io/release/v$K8SVERSION/bin/linux/amd64/kubectl\""
+  try "install -m 0755 kubectl /usr/local/bin/kubectl"
+
+  # Install helm
+  try "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
+  try "chmod 700 get_helm.sh"
+  try "./get_helm.sh"
+
+
+
+  install_utilities_ran=true
+}
+
+gcp_save_credentials () {
+
+
+
+  if [[ $gcp_save_credentials_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requires:
+  install_utilities
+
+  logv2 "Saving GCP Credentials"
+
+  try "mkdir -p /root/.config/gcloud"
+  try "echo $INSTRUQT_GCP_PROJECT_GCPPROJECT_SERVICE_ACCOUNT_KEY | base64 -d > /root/.config/gcloud/credentials"
+  try "gcloud config set project $INSTRUQT_GCP_PROJECT_GCPPROJECT_PROJECT_ID" term=true
+  try "mkdir -p /root/.gcp"
+  try "cp /root/.config/gcloud/credentials /root/.gcp/osServiceAccount.json"
+
+  gcp_save_credentials_ran=true
+
+}
+
+ocp_create_cluster () {
+
+  if [[ $ocp_create_cluster_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  ### BEGIN Guard Clauses
+  if [[ $feature_OCP == false ]]; then
+    terminate "OCP Feature Flag not set" ${ERR_OCP_FEATURE_FLAG}
+  fi
+  ### END Guard Clause
+
+  logv2 "Creating OCP Cluster"
+
+  # Requires:
+  install_utilities
+  gcp_save_credentials
+  create_ssh_keypair
+  ocp_configure_dns
+
+  # Code goes here
+  try "/root/openshift-install --dir=${OCP_INSTALL_DIR} create cluster"
+
+  ocp_create_cluster_ran=true
+
+}
+
+gke_create_cluster () {
+
+  if [[ $gke_create_cluster_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requires:
+  # GCP_REGIONS
+  # GCP_ZONES
+  install_utilities
+  # nodeconfig.yaml
+  gcp_save_credentials
+  write_gke_nodeconfig
+  # Get the GKE release for this region. This updates the K8SVERSION variable from the GKE_VERSION major.minor release.
+  get_gke_release
+  #
+  # Will Modify:
+  # GCP_REGIONS (will delete first element on failure when gcp=true is passed)
+  # K8SVERSION
+
+  logv2 "Creating GKE Cluster"
+
+  debug "GCP_REGIONS: ${GCP_REGIONS[@]}"
+  debug "zones: ${zones[@]}"
+  debug "K8SVERSION: ${K8SVERSION}"
+  debug "GKE_CLUSTERNAME: ${GKE_CLUSTERNAME}"
+  
+
+  try 'gcloud container clusters create $GKE_CLUSTERNAME \
+  --num-nodes=1 \
+  --zone ${zones[0]} \
+  --node-locations ${zones[0]},${zones[1]},${zones[2]} \
+  --cluster-version $K8SVERSION \
+  --no-enable-autoupgrade \
+  --image-type ubuntu_containerd \
+  --machine-type e2-standard-8 \
+  --system-config-from-file=/root/gke-nodeconfig.yaml\
+  '\
+  retry=3 term=true gcp=true fail=false
+
+
+  log "Get GKE Credentials"
+  log "Creating kubeconfig export for PX Backup"
+  export USE_GKE_GCLOUD_AUTH_PLUGIN=False
+  try 'gcloud container clusters get-credentials $GKE_CLUSTERNAME --zone ${zones[0]}' retry=2 term=false
+  try "kubectl config view --minify --flatten > /root/gcp-pxbackup-kubeconfig.yaml"
+  export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+  log "Creating kubeconfig entry"
+  try 'gcloud container clusters get-credentials $GKE_CLUSTERNAME --zone ${zones[0]}' retry=2 term=false
+  log "renaming kubeconfig context"
+  old_context=$(kubectl config view | grep "current-context" | awk '{print $2}')
+  kubectl config rename-context $old_context cluster1
+  GKE_INSTANCES=$(gcloud compute instances list --format="value(name)")
+  log "Fetched GKE Instances"
+  debug "Instances: ${GKE_INSTANCES}"
+
+
+  gke_create_cluster_ran=true
+
+}
+
+gke_config_ssh () {
+
+  if [[ $gke_config_ssh_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requirements
+  gke_create_cluster
+  create_ssh_keypair
+
+  logv2 "Configuring GKE SSH"
+  log "Enable OS Login"
+  try 'gcloud compute project-info add-metadata --metadata enable-oslogin=TRUE'
+
+  # Get our gcloud project username
+  GCPUSER=$(gcloud compute os-login describe-profile --format json |jq -r '.name')
+
+  # Generate the SSH key
+  #ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $GCPUSER -b 2048 -N ''
+
+  # Add the new public key to the gcloud project
+  gcloud compute os-login ssh-keys add  --key-file=/root/.ssh/google_compute_engine.pub
+
+  # Get our SSH service account username
+  GCPSSHUSER=$(gcloud compute os-login describe-profile --format json | jq -r '.posixAccounts[].username')
+  COUNT=1
+  for instance in $(kubectl get nodes --no-headers | awk '{print $1}'); do
+    # Get the instance zone
+    IZONE=$(gcloud compute instances list --filter="name=( 'NAME' $instance )" --format="value 
+(zone)")
+    ADDR=$(gcloud compute instances describe $instance --format='get(networkInterfaces[0].accessConfigs[0].natIP)' --zone $IZONE)
+  if [[ $ADDR != "null" ]];then
+    cat <<-EOF >> ~/.ssh/config
+Host node0${COUNT}
+  HostName $ADDR
+  User $GCPSSHUSER
+  IdentityFile ~/.ssh/google_compute_engine
+  StrictHostKeyChecking no
+EOF
+  fi
+  COUNT=$((COUNT+1))
+done
+gke_config_ssh_ran=true
+}
+
+
+
+
+gke_create_cluster_dr () {
+
+  if [[ $gke_create_cluster_dr_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requires:
+  # GCP_REGIONS
+  # GCP_ZONES
+  install_utilities
+  # nodeconfig.yaml
+  gcp_save_credentials
+  write_gke_nodeconfig
+  # Get the GKE release for this region. This updates the K8SVERSION variable from the GKE_VERSION major.minor release.
+  get_gke_release
+  #
+  # Will Modify:
+  # GCP_REGIONS (will delete first element on failure when gcp=true is passed)
+  # K8SVERSION
+
+  logv2 "Creating GKE DR Cluster"
+
+  debug "GCP_REGIONS: ${GCP_REGIONS[@]}"
+  debug "zones: ${zones[@]}"
+  debug "K8SVERSION: ${K8SVERSION}"
+  debug "GKE_CLUSTERNAME: ${GKE_CLUSTERNAME_DR}"
+  
+
+  try 'gcloud container clusters create $GKE_CLUSTERNAME_DR \
+  --num-nodes=1 \
+  --zone ${zones[0]} \
+  --node-locations ${zones[0]},${zones[1]},${zones[2]} \
+  --cluster-version $K8SVERSION \
+  --no-enable-autoupgrade \
+  --image-type ubuntu_containerd \
+  --machine-type e2-standard-8 \
+  --system-config-from-file=/root/gke-nodeconfig.yaml\
+  '\
+  retry=3 term=true gcp=false fail=false
+
+
+  log "Get GKE Credentials"
+
+
+  log "Creating kubeconfig export for PX Backup"
+  export USE_GKE_GCLOUD_AUTH_PLUGIN=False
+  try 'gcloud container clusters get-credentials $GKE_CLUSTERNAME_DR --zone ${zones[0]}' retry=2 term=false
+  try "kubectl config view --minify --flatten > /root/gcp-pxbackup-kubeconfig-dr.yaml"
+  export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+  log "Creating kubeconfig entry"
+  try 'gcloud container clusters get-credentials $GKE_CLUSTERNAME_DR --zone ${zones[0]}' retry=2 term=false
+  log "renaming kubeconfig context"
+  old_context=$(kubectl config view | grep "current-context" | awk '{print $2}')
+  kubectl config rename-context $old_context cluster2
+  
+  GKE_INSTANCES=$(gcloud compute instances list --format="value(name)")
+  log "Fetched GKE Instances"
+  debug "Instances: ${GKE_INSTANCES}"
+
+  # We need to ensure that the default context is ALWAYS cluster1
+  try "kubectl config use-context cluster1"
+
+  gke_create_cluster_dr_ran=true
+}
+
+
+gke_config_ssh_dr () {
+
+if [[ $gke_config_ssh_dr_ran == true ]]; then
+  log "${FUNCNAME[0]} has already run, skipping"
+  return 0
+fi
+
+  logv2 "Configuring GKE SSH for DR"
+  log "Enable OS Login for DR"
+  try 'gcloud compute project-info add-metadata --metadata enable-oslogin=TRUE'
+
+  try "kubectl config use-context cluster2"
+
+  # requires
+  gke_create_cluster_dr
+  create_ssh_keypair
+
+  # Get our gcloud project username
+  GCPUSER=$(gcloud compute os-login describe-profile --format json |jq -r '.name')
+
+  # Generate the SSH key
+  #ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $GCPUSER -b 2048 -N ''
+
+  # Add the new public key to the gcloud project
+  gcloud compute os-login ssh-keys add  --key-file=/root/.ssh/google_compute_engine.pub
+
+  # Get our SSH service account username
+  GCPSSHUSER=$(gcloud compute os-login describe-profile --format json | jq -r '.posixAccounts[].username')
+  COUNT=1
+  for instance in $(kubectl get nodes --no-headers | awk '{print $1}'); do
+    # Get the instance zone
+    IZONE=$(gcloud compute instances list --filter="name=( 'NAME' $instance )" --format="value 
+(zone)")
+    ADDR=$(gcloud compute instances describe $instance --format='get(networkInterfaces[0].accessConfigs[0].natIP)' --zone $IZONE)
+  if [[ $ADDR != "null" ]];then
+    cat <<-EOF >> ~/.ssh/config
+Host node0${COUNT}-dr
+  HostName $ADDR
+  User $GCPSSHUSER
+  IdentityFile ~/.ssh/google_compute_engine
+  StrictHostKeyChecking no
+EOF
+  fi
+  COUNT=$((COUNT+1))
+done
+
+try "kubectl config use-context cluster1"
+
+gke_config_ssh_dr_ran=true
+
+}
+
+create_ssh_keypair () {
+  if [[ $create_ssh_keypair_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Creating SSH Keypair"
+
+  try 'ssh-keygen -t rsa -N "" -f ${SSH_ID_NAME}'
+
+    # Get our gcloud project username
+  GCPUSER=$(gcloud compute os-login describe-profile --format json |jq -r '.name')
+
+  # Generate the SSH key
+  ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $GCPUSER -b 2048 -N ''
+
+  SSH_ID_PUB=$(cat ${SSH_ID_NAME_PUB})
+
+  create_ssh_keypair_ran=true
+
+}
+
+
+gke_add_localdisk () {
+
+  # This function adds local disks to google cloud instances. 
+
+  if [[ $gke_add_localdisk_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # REQUIRES:
+  # GKE_INSTANCES from
+  gke_create_cluster
+
+  logv2 "Adding Local Disk to GKE Instances"
+
+
+  GKE_INSTANCES=$(gcloud compute instances list --format="value(name)")
+  log "Fetched GKE Instances"
+  debug "Instances: ${GKE_INSTANCES}"
+
+  # Add backing volume to each instance
+  for i in $GKE_INSTANCES; do
+  # Get the instance zone
+  IZONE=$(gcloud compute instances list --filter="name=( 'NAME' $i )" --format="value
+(zone)")
+  # Create a new volume
+  VOLNAME="${i}-disk"
+  try "gcloud compute disks create $VOLNAME --size 20 --type pd-balanced --zone $IZONE"
+  # Attach the volume
+  try "gcloud compute instances attach-disk $i --disk $VOLNAME --device-name=sdb --zone $IZONE"
+done <<< "$GKE_INSTANCES"
+
+log "Local Disk Added"
+gke_add_localdisk_ran=true
+
+}
+
+customize_bash () {
+
+  # This function is a 'catch-all' for bash customizations. It should call the add_bashrc function.
+  # We do this so we can write out the .bashrc file last, and resolve any environment variables that may have changed
+  # as part of our script
+
+  if [[ $customize_bash_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Customizing Bash"
+
+  add_bashrc "#### Setting up bash completion and aliases ####"
+  add_bashrc "source /etc/bash_completion"
+  add_bashrc "source <(kubectl completion bash)"
+  add_bashrc "alias k=kubectl"
+  add_bashrc "complete -o default -F __start_kubectl k"
+  add_bashrc "ccat() { pygmentize -g \$1 | perl -e 'print ++\$i. \" \$_\" for <>'; }"
+
+  customize_bash_ran=true
+
+}
+
+gke_add_clusterrolebinding () {
+
+  # This function adds the cluster role binding as part of the GKE installation documentation
+  # This does not seem to work correctly, as cloud drives will fail. See the portworx_install function
+  # for how we authenicated to GCP for cloud drives
+  if [[ $gke_add_clusterrolebinding_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+  logv2 "Adding Cluster Role Binding"
+
+  # Requires:
+  install_utilities
+  gke_create_cluster
+
+
+  # Create the proper ClusterRoleBinding (from PX GKE installation docs page https://docs.portworx.com/portworx-enterprise/install-portworx/kubernetes/gcp/gke-operator#provide-permissions-to-portworx)
+  try "kubectl create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=\$(gcloud info --format='value(config.account)')"
+
+  gke_add_clusterrolebinding_ran=true
+
+}
+
+gke_add_clusterrolebinding_dr () {
+  # The DR version of the add_clusterrolebinding
+  if [[ $gke_add_clusterrolebinding_dr_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+  logv2 "Adding Cluster Role Binding"
+
+  # Requires:
+  install_utilities
+  gke_create_cluster
+
+  try "kubectl config use-context cluster2"
+  # Create the proper ClusterRoleBinding (from PX GKE installation docs page https://docs.portworx.com/portworx-enterprise/install-portworx/kubernetes/gcp/gke-operator#provide-permissions-to-portworx)
+  try "kubectl --context cluster2 create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=\$(gcloud info --format='value(config.account)')"
+
+  try "kubectl config use-context cluster1"
+
+  gke_add_clusterrolebinding_dr_ran=true
+
+  
+
+}
+
+portworx_install_operator () {
+
+  # This function installs the portworx operator. This function is called twice in the case
+  # of a DR meta function. This is done by resetting the portworx_install_operator_ran variable
+  # see the appropriate meta function for more information
+
+  if [[ $portworx_install_operator_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requires:
+  # Need to think about cluster logic heredoc completion bash
+
+  logv2 "Installing Portworx Operator"
+
+  # Install the portworx operator
+  try 'kubectl create namespace portworx'
+  try "kubectl apply -f \"https://install.portworx.com/${PXVERSION}?comp=pxoperator&kbver=${K8SVERSION}&ns=portworx\""
+
+  portworx_install_operator_ran=true
+}
+
+portworx_install () {
+
+  # This function may be called more than once by resetting the portworx_install_ran variable
+  # This is only the case for DR meta functions. See the appropriate meta function for more information
+  # This function is a unified function that accepts parameters to enable or disable certain features
+  # It is sutable for installing portworx on GKE, Rancher or Openshift
+  # The detection logic is automatic, but should be understood by the user
+
+  if [[ $portworx_install_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing Portworx"
+
+
+
+  # PARAM BLOCK:
+  debug "$@"
+  local cmd="${1}"
+  # Set variable defaults  
+  auth=false
+  encrypt=false
+  clouddrives=false
+  bypass_requirements=false
+  shift
+    while [[ "$1" != "" ]]; do
+      PARAM=$(echo $1 | cut -d'=' -f1)
+      VALUE=$(echo $1 | cut -d'=' -f2)
+      case $PARAM in
+        auth)
+          local auth="${VALUE}"
+          debug "Auth: ${auth}"
+          ;;
+        encrypt)
+          local encrypt="${VALUE}"
+          debug "Encrypt: ${encrypt}"
+          ;;
+        clouddrives)
+          local clouddrives="${VALUE}"
+          debug "Cloud Drives: ${clouddrives}"
+          ;;
+        bypass_requirements)
+          local bypass_requirements="${VALUE}"
+          debug "Bypass Requirements: ${bypass_requirements}"
+          ;;
+      esac
+      shift
+    done
+if [[ $bypass_requirements == false ]]; then
+  # Requires:
+  portworx_install_operator
+  wait_ready_portworx_operator
+fi
+
+  # Download the spec file
+  # Be warned, the escape characters are nasty here:
+  if [[ $clouddrives == true ]]; then
+    log "Enabling Cloud Drives"
+    echo $INSTRUQT_GCP_PROJECT_GCPPROJECT_SERVICE_ACCOUNT_KEY | base64 -d > gcloud.json
+    kubectl -n portworx create secret generic px-gcloud --from-file=gcloud.json
+    try "curl -L -s -o px-spec.yaml \"https://install.portworx.com/${PXVERSION}?operator=true&mc=false&kbver=${K8SVERSION}&ns=portworx&b=true&iop=6&s=%22type%3Dpd-standard%2Csize%3D50%22&ce=gce&c=${PX_CLUSTERNAME}&gke=true&stork=true&csi=true&mon=true&tel=false&st=k8s&promop=true\""
+    yq -iy '.spec.volumes += [{"name": "gcloud", "mountPath": "/etc/pwx/gce", "secret": {"secretName": "px-gcloud"}}] | .spec.env += [{"name": "GOOGLE_APPLICATION_CREDENTIALS", "value": "/etc/pwx/gce/gcloud.json"}]' px-spec.yaml
+  else
+    try "curl -L -s -o px-spec.yaml \"https://install.portworx.com/${PXVERSION}?operator=true&mc=false&kbver=${K8SVERSION}&ns=portworx&b=true&s=%2Fdev%2Fsdb&j=auto&c=${PX_CLUSTERNAME}&gke=true&stork=true&csi=true&mon=true&tel=false&st=k8s&promop=true\""
+  fi
+
+  #Due to really wanting only a single function, we need to strip out gke=true IF we are on rancher. We can tell because our K8SVERSION var will end in rke2r1
+  if [[ $K8SVERSION == *rke2r1 ]]; then
+    log "Removing gke=true from px-spec.yaml"
+    yq -iy 'del(.metadata.annotations["portworx.io/is-gke"])' px-spec.yaml
+  fi
+  if [[ $ocp_config_ran == true ]]; then
+    log "OCP detected, removing gke=true and adding is-openshift=true"
+    yq -iy 'del(.metadata.annotations["portworx.io/is-gke"])' px-spec.yaml
+    yq -iy '.metadata.annotations["portworx.io/is-openshift"] = "true"' px-spec.yaml
+  fi
+
+
+  if [[ $auth == true ]]; then
+    log "Enabling Authentication"
+    # enable security
+    yq -i '.spec.security.enabled = true' px-spec.yaml
+    # disable checks due to https://portworx.atlassian.net/browse/PWX-32111?atlOrigin=eyJpIjoiN2M1NTFiZTY3MTVkNDkwMTliNmM4Zjc0MDY2ODhjZmEiLCJwIjoiamlyYS1zbGFjay1pbnQifQ
+    yq -i '.metadata.annotations."portworx.io/preflight-check" = "skip"' px-spec.yaml
+    # disable guest access
+    yq -i '.spec.security.auth.guestAccess = "Disabled"' px-spec.yaml
+  fi
+
+  if [[ $encrypt == true ]]; then
+    # enable encryption
+    log "Enabling Encryption"
+    # WIP
+  fi
+
+  try 'kubectl apply -f px-spec.yaml'
+
+  sleep 20
+
+  kubectl patch stc px-cluster --type='json' -p='[
+  {"op": "add", "path": "/metadata/annotations/portworx.io~1service-type", "value": "portworx-api:LoadBalancer"},
+  {"op": "add", "path": "/spec/stork/args/admin-namespace", "value": "portworx"}
+  ]' -n portworx 
+
+
+  portworx_install_ran=true
+}
+
+alias_pxctl () {
+
+  # This function creates the pxctl alias. pxctl should be available both in this script
+  # as well as added to the .bashrc file
+  if [[ $alias_pxctl_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+
+  logv2 "Creating pxctl alias"
+
+  # PARAM BLOCK:
+  debug "$@"
+  local cmd="${1}"
+  # Set variable defaults  
+  auth=false
+  shift
+    while [[ "$1" != "" ]]; do
+      PARAM=$(echo $1 | cut -d'=' -f1)
+      VALUE=$(echo $1 | cut -d'=' -f2)
+      case $PARAM in
+        auth)
+          local auth="${VALUE}"
+          debug "Auth: ${auth}"
+          ;;
+      esac
+      shift
+    done
+
+
+  # Requires:
+  portworx_install
+  wait_ready_portworx
+
+
+  log "enable pxctl alias"
+  alias pxctl="PX_POD=\$(kubectl get pods -l name=portworx -n portworx --field-selector=status.phase==Running | grep \"1/1\" | awk \"NR==1{print \$1}\") && kubectl exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl"
+  add_bashrc "alias pxctl='PX_POD=\$(kubectl get pods -l name=portworx -n portworx --field-selector=status.phase==Running | grep \"1/1\" | awk \"NR==1{print \$1}\") && kubectl exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl'"
+
+
+  if [[ $auth == true ]]; then
+      ADMIN_TOKEN=$(kubectl -n portworx get secret px-admin-token --template='{{index .data "auth-token" | base64decode}}')
+      pxctl context create admin --token=$ADMIN_TOKEN
+  fi
+  alias_pxctl_ran=true
+
+}
+
+
+
+aws_auth_configure () {
+  # This function configures AWS authentication for our EXTERNAL provider.
+  # This is currently used to configure DNS for OCP
+
+  if [[ $aws_auth_configure_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  ### BEGIN guard clauses
+  if [[ $feature_AWS == false ]]; then
+    terminate "AWS Feature Flag not set" ${ERR_AWS_FEATURE_FLAG}
+  fi
+  ### END guard clauses
+
+  logv2 "Configuring AWS Auth"
+
+  # Requires:
+  install_utilities
+
+  ##### THIS IS CONFIDENTIAL INFORMATION
+  aws configure set aws_access_key_id ${CCROW_ROUTE53_ACCESSKEY}
+  aws configure set aws_secret_access_key ${CCROW_ROUTE53_SECRETKEY}
+  aws configure set default.region "us-west-2"
+  aws configure set default.output "json"
+  ##### END CONFIDENTIAL INFORMATION
+
+  aws_auth_configure_ran=true
+}
+
+ocp_configure_dns () {
+
+  # This function configures DNS for OCP.
+  if [[ $ocp_configure_dns_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+  ### BEGIN guard clauses
+  if [[ feature_OCP == false ]]; then
+    terminate "OCP Feature Flag not set" ${ERR_OCP_FEATURE_FLAG}
+  fi
+  if [[ feature_AWS == false ]]; then
+    terminate "AWS Feature Flag not set" ${ERR_AWS_FEATURE_FLAG}
+  fi
+  ### END guard clauses
+  logv2 "Configuring DNS for OCP"
+
+  # Requires:
+  # OCP_INSTALL_DIR
+  # OCP_VERSION
+  # CLUSTERNAME
+  install_utilities
+  aws_auth_configure
+
+  OCP_DNS_ZONE="${INSTRUQT_PARTICIPANT_ID}.instruqt.pxbbq.com"
+  try "gcloud dns managed-zones create ocp --description=DESCRIPTION --dns-name=${OCP_DNS_ZONE} --visibility=public"
+
+  # This is a hack that should be replaced with a proper check
+  sleep 15
+
+  gcloud dns managed-zones describe ocp --format="json" > gcloud_domain_output.json
+  NAMESERVERS=($(jq -r '.nameServers[]' gcloud_domain_output.json))
+
+cat > change-resource-record-sets.json <<EOF
+{
+  "Comment": "Add NS record for ${INSTRUQT_PARTICIPANT_ID}",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "$OCP_DNS_ZONE",
+        "Type": "NS",
+        "TTL": 300,
+        "ResourceRecords": [
+          { "Value": "${NAMESERVERS[0]}" },
+          { "Value": "${NAMESERVERS[1]}" },
+          { "Value": "${NAMESERVERS[2]}" },
+          { "Value": "${NAMESERVERS[3]}" }
+        ]
+      }
+    }
+  ]
+}
+EOF
+  aws route53 change-resource-record-sets --hosted-zone-id $AWS_DNS_ZONE_ID --change-batch file://change-resource-record-sets.json
+
+  # write out the OCP install-config.yaml again
+  write_ocp_install_config
+
+  ocp_configure_dns_ran=true
+
+}
+
+nginx_config () {
+  # This function configures NGINX. It does not do node detection logic (which can be 
+  # found in the write_nginx_config function).
+  logv2 "Configuring Nginx"
+
+  # Requires:
+  write_nginx_config
+
+
+
+  /etc/init.d/nginx stop
+  sleep 10
+  /etc/init.d/nginx start
+
+  TARGET_TAG=$(gcloud compute instances list --filter="zone:${zones[0]} AND name~^gke-$GKE_CLUSTERNAME" --limit=1 --format="value(tags.items)")
+  gcloud compute firewall-rules create nginx-30000-30003 \
+    --network=default \
+    --allow=tcp:30000-30003 \
+    --source-ranges=0.0.0.0/0 \
+
+}
+
+
+pxbackup_install () {
+  # This function installs PX-Backup.
+  # This function does not configure PX backup and does not require minio (becasue you
+  # could be bringing your own object config)
+
+  if [[ $pxbackup_install_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing PX-Backup"
+
+  # Requires:
+  install_utilities
+  # A working cluster!!
+  # portworx enterprise due to our storage class
+
+
+  try "helm repo add portworx http://charts.portworx.io/ && helm repo update"
+  try "helm install px-central portworx/px-central --namespace central --create-namespace --version ${PXBACKUP_VERSION} --set persistentStorage.enabled=true,persistentStorage.storageClassName=\"${PXBACKUP_SC}\",pxbackup.enabled=true,oidc.centralOIDC.updateAdminProfile=false"
+
+  # NOTE, these commands will run async. This is by design, but any configuration funciton (or perhaps the meta
+  # funcions) should wait for the pxbackup pods to be ready before continuing by using wait_ready_pxbackup
+
+  
+  pxbackup_install_ran=true
+
+
+}
+
+pxbackup_pxbackup_installctl () {
+
+
+  if [[ $pxbackup_pxbackup_installctl_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing PX-BackupCTL"
+
+  # Requires:
+  pxbackup_install
+  wait_ready_pxbackup
+  
+  BACKUP_POD_NAME=$(kubectl get pods -n central -l app=px-backup -o jsonpath='{.items[0].metadata.name}')
+  try "kubectl cp -n central ${BACKUP_POD_NAME}:pxbackupctl/linux/pxbackupctl /usr/bin/pxbackupctl --retries=10"
+  try "chmod +x /usr/bin/pxbackupctl"
+  pxbackup_pxbackup_installctl_ran=true
+
+}
+
+portworx_install_storkctl () {
+  if [[ $portworx_install_installstorkctl_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing StorkCTL"
+
+  # Requires:
+  portworx_install
+  wait_ready_portworx
+
+  STORK_POD=$(kubectl get pods -n portworx -l name=stork -o jsonpath='{.items[0].metadata.name}')
+  try "kubectl cp -n portworx $STORK_POD:storkctl/linux/storkctl ./storkctl  --retries=10"
+  chmod +x storkctl
+  mv storkctl /usr/bin/storkctl
+  portworx_install_installstorkctl_ran=true
+
+}
+
+pxbackup_config () {
+
+  if [[ $pxbackup_config_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Configuring PX-Backup"
+
+  # Requirements
+  pxbackup_install
+  minio_install
+  wait_ready_minio
+  wait_ready_pxbackup
+  config_minio
+  pxbackup_pxbackup_installctl
+
+  # Set the load balancer
+  kubectl patch svc px-backup -n central --type='json' -p '[{"op":"replace","path":"/spec/type","value":"LoadBalancer"}]'
+  wait_ready_pxbackup_loadbalancer
+
+  LB_UI_IP=$(kubectl get svc -n central px-backup-ui -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+  LB_SERVER_IP=$(kubectl get svc -n central px-backup -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+  client_secret=$(kubectl get secret --namespace central pxc-backup-secret -o jsonpath={.data.OIDC_CLIENT_SECRET} | base64 --decode)
+  add_bashrc "export LB_UI_IP=${LB_UI_IP}"
+  add_bashrc "export LB_SERVER_IP=${LB_SERVER_IP}"
+  add_bashrc "export CLIENT_SECRET=${client_secret}"
+
+  # If we are running openshift, we need to create a kubeconfig file
+  # Why did we use the ocp_config_ran variable instead of the feature flag? Because this change is destructive
+
+
+  # And login to px backup
+  until [[ $return_value == 0 ]]; do
+      pxbackupctl login -s http://$LB_UI_IP -u admin -p admin
+      return_value=$?
+      echo "Waiting for successful login"
+      sleep 5
+  done
+  # Do we have the feature flag to configure pxbackup?
+  if [[ $feature_CONFIGPXBACKUP == true ]]; then
+    log "Configuring PX-Backup"
+    pxbackupctl create cloudcredential --name gcp-account -p google --google-json-key /root/.config/gcloud/credentials -e $LB_SERVER_IP:10002
+    cloud_credential_uid=$(pxbackupctl get cloudcredential -e $LB_SERVER_IP:10002 --orgID default -o json | jq -cr '.[0].metadata.uid') 
+    
+  if [[ $ocp_config_ran == true ]]; then
+    log "openshift detected, creating kubeconfig"
+    kubectl config view --flatten --minify > /root/gcp-pxbackup-kubeconfig.yaml
+    pxbackupctl create cluster --name instruqt-px -k /root/gcp-pxbackup-kubeconfig.yaml -e $LB_SERVER_IP:10002 --orgID default
+  else
+    log "openshift not detected, creating cluster using default method"
+    pxbackupctl create cluster --name instruqt-px -k /root/gcp-pxbackup-kubeconfig.yaml -e $LB_SERVER_IP:10002 --cloud-credential-uid $cloud_credential_uid --cloud-credential-name gcp-account --orgID default
+  fi
+    # Create our schedule policies
+    pxbackupctl create schedulepolicy --interval-minutes 15 -e $LB_SERVER_IP:10002 --name 15-min
+    pxbackupctl create schedulepolicy --interval-minutes 15 -e $LB_SERVER_IP:10002 --name 15-min-object --forObjectLock
+
+
+    # Connect to our minio buckts. This requires that minio was installed and the buckets were created.
+    pxbackupctl create cloudcredential --name s3-account -p aws -e $LB_SERVER_IP:10002 --aws-access-key $MINIO_ACCESS_KEY --aws-secret-key $MINIO_SECRET_KEY
+    cloud_credential_uid=$(pxbackupctl get cloudcredential -e $LB_SERVER_IP:10002 --orgID default -o json | jq -cr '.[1].metadata.uid') 
+
+    pxbackupctl create backuplocation -e $LB_SERVER_IP:10002 --cloud-credential-Uid $cloud_credential_uid --name backup-location-1 -p s3 --cloud-credential-name s3-account --path $BUCKETNAME --s3-endpoint ${MINIO_ENDPOINT} --s3-region us-central-1 --s3-disable-pathstyle=true --s3-disable-ssl=true
+    pxbackupctl create backuplocation -e $LB_SERVER_IP:10002 --cloud-credential-Uid $cloud_credential_uid --name obj-lock-backup-location-1 -p s3 --cloud-credential-name s3-account --path $BUCKETNAME_OBJECTLOCK --s3-endpoint ${MINIO_ENDPOINT} --s3-region us-central-1 --s3-disable-pathstyle=true --s3-disable-ssl=true
+  fi
+
+  # Finally, let's update a file with nginx tabs:
+cat << EOF > /var/www/html/pxbackup.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PX Backup Link</title>
+</head>
+<body>
+    <a href="http://${LB_UI_IP}" target="_blank" rel="noopener noreferrer">PX Backup Web Console</a>
+</body>
+</html>
+EOF
+
+  pxbackup_config_ran=true
+}
+
+ocp_config () {
+
+  # This function configures OCP
+  # It installs the portworx operator
+  # It also installs the openshift virtualization provider
+  # It configures the firewall to allow portworx traffic (by opening up all ports)
+  # It is also responsible for the kubeconfig update
+
+  if [[ $ocp_config_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Configuring OCP"
+  # Requirements
+  ocp_create_cluster
+  write_ocp_px_operator_subscription
+  write_ocp_px_operatorgroup
+  write_ocp_portworx_role
+  write_ocp_osv
+
+  add_bashrc "export KUBEADMIN_PASSWORD=$(cat ${OCP_INSTALL_DIR}/auth/kubeadmin-password)"
+  export KUBECONFIG="${OCP_INSTALL_DIR}/auth/kubeconfig"
+  add_bashrc "export KUBECONFIG=${KUBECONFIG}"
+  add_bashrc "alias kubectl=/root/kubectl"
+  add_bashrc "source <(/root/oc completion bash)"
+  add_bashrc "export OCP_CONSOLE_URL=https://console-openshift-console.apps.ocp.${OCP_DNS_ZONE}"
+  add_bashrc "export OCP_DNS_ZONE=${OCP_DNS_ZONE}"
+
+  oc completion bash > /etc/bash_completion.d/oc_bash_completion
+
+  mkdir /root/.kube
+  cp -rfv /root/ocp-install/auth/kubeconfig /root/.kube/config
+  sleep 5
+
+  ## Configure Firewall
+  OCP_NETWORK=$(gcloud compute networks list --filter="name ~ ^ocp" --format="value(name)")
+  # Open up the firewall
+  gcloud compute firewall-rules create allow-all-ports \
+    --direction=INGRESS \
+    --priority=999 \
+    --network=$OCP_NETWORK \
+    --action=ALLOW \
+    --rules=all \
+    --source-ranges=0.0.0.0/0
+
+if [[ $feature_OCP_SUPPRESSWARNINGS == true ]]; then
+  cat << EOF >> /root/.bashrc
+oc() {
+    command oc "$@" 2>/dev/null
+}
+EOF
+fi
+
+  try 'oc apply -f ocp-osv.yaml' wait=20 retry=10
+
+  try 'oc apply -f ocp-osv-obj.yaml' wait=20 retry=10
+
+  # We can't do this until portworx is installed
+  # Patch the storage profile
+#   kubectl patch storageprofile px-csi-db --type='merge' -p='
+# {
+#   "spec": {
+#     "claimPropertySets": [
+#       {
+#         "accessModes": [
+#           "ReadWriteMany"
+#         ],
+#         "volumeMode": "Filesystem"
+#       }
+#     ]
+#   }
+# }'
+
+# kubectl patch storageclass px-csi-db -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+
+  # Allow user monitoring
+cat << EOF | oc apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    enableUserWorkload: true
+EOF
+
+
+  # Remove google as the default storage class:
+    oc patch storageclass standard-csi -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+
+  ocp_config_ran=true
+}
+
+ocp_config_post_pxe () {
+
+  if [[ $ocp_config_post_pxe_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requires
+
+   # Enable the console plugin
+cat << EOF | oc apply -f -
+apiVersion: operator.openshift.io/v1
+kind: Console
+metadata:
+  name: cluster
+spec:
+  plugins:
+    - portworx
+EOF
+
+  # Enable the px-csi-db storage class to be the default
+  kubectl patch storageclass px-csi-db -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+ocp_config_post_pxe_ran=true
+
+}
+
+ocp_portworx_operator_install () {
+  if [[ $ocp_portworx_operator_install_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requires:
+  ocp_config
+
+  logv2 "Installing Portworx Operator on OCP"
+
+  oc create namespace portworx
+  oc apply -f /root/ocp-px-operatorgroup.yaml
+  oc apply -f /root/ocp-px-operator-subscription.yaml
+
+  sleep 30
+
+  ocp_portworx_operator_install_ran=true
+
+}
+
+minio_install () {
+  if [[ $minio_install_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing Minio"
+
+  # Requires:
+  install_utilities
+  # Portworx installed. We don't have a specific requirement because we may have used 1 of 2 installs
+
+if [[ $ocp_config_ran == true ]]; then
+
+  oc create ns px-minio
+  oc create sa scc-admin -n px-minio
+  oc adm policy add-cluster-role-to-user cluster-admin -z scc-admin -n px-minio
+
+cat << EOF | oc apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pre-install-scc
+  namespace: px-minio
+  annotations:
+    "helm.sh/hook": pre-install
+spec:
+  template:
+    spec:
+      serviceAccountName: scc-admin
+      containers:
+      - name: add-scc-anyuid
+        image: registry.access.redhat.com/openshift3/ose-cli
+        command: ["/bin/bash", "-c"]
+        args:
+          - >
+            oc adm policy add-scc-to-user anyuid -z minio-sa;
+            echo "SCC anyuid granted";
+      restartPolicy: OnFailure
+EOF
+fi
+  helm repo add minio https://charts.min.io/ && helm repo update
+
+
+  try "helm install px-minio \
+      --set mode=standalone \
+      --set persistence.storageClass=${MINIO_SC} \
+      --set persistence.size=10Gi \
+      --set resources.requests.memory=1Gi \
+      --set service.type=LoadBalancer \
+      --namespace px-minio \
+      --version ${MINIO_VERSION} \
+      --create-namespace \
+      minio/minio"
+  
+
+  oc project default
+  minio_install_ran=true
+}
+
+minio_config () {
+  if [[ $minio_config_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Configuring Minio"
+
+  # Requires:
+  install_utilities
+  minio_install
+  wait_ready_minio
+  
+  MINIO_ENDPOINT=http://$(kubectl get svc -n px-minio px-minio -o jsonpath='{.status.loadBalancer.ingress[].ip}'):9000
+  MINIO_ACCESS_KEY=$(kubectl get secret -n px-minio px-minio -o jsonpath="{.data.rootUser}" | base64 --decode)
+  MINIO_SECRET_KEY=$(kubectl get secret -n px-minio px-minio -o jsonpath="{.data.rootPassword}" | base64 --decode)
+  BUCKETNAME=instruqt-$(date +%s)
+  BUCKETNAME_OBJECTLOCK=instruqt-$(date +%s)-objectlock
+
+  try "mc alias set px $MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY" retry=3 term=false wait=15
+
+  try "mc mb px/$BUCKETNAME" retry=3
+  try "mc mb px/$BUCKETNAME_OBJECTLOCK --with-lock" retry=3 wait=5
+  try "mc retention set --default COMPLIANCE 7d px/${BUCKETNAME_OBJECTLOCK}" term=false retry=3 wait=5
+
+  add_bashrc "export MINIO_ENDPOINT=${MINIO_ENDPOINT}"
+  add_bashrc "export MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}"
+  add_bashrc "export MINIO_SECRET_KEY=${MINIO_SECRET_KEY}"
+  add_bashrc "export BUCKETNAME=${BUCKETNAME}"
+  add_bashrc "export BUCKETNAME_OBJECTLOCK=${BUCKETNAME_OBJECTLOCK}"
+
+  
+  minio_config_ran=true
+
+}
+
+grafana_install () {
+  if [[ $grafana_install_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing Grafana"
+
+  # Requires:
+  install_utilities
+  write_grafana_config
+  # Dependencies are light as we may have multile portworx install functions
+
+  ### Feature Guard Clause
+  if [[ $feature_GRAFANA == false ]]; then
+    log "Grafana feature flag not set, we shouldn't be here"
+    return 0
+  fi
+
+  try "kubectl -n portworx create configmap grafana-dashboard-config --from-file=grafana-dashboard-config.yaml"
+  sleep 10
+
+  try "kubectl -n portworx create configmap grafana-source-config --from-file=grafana-datasource.yaml"
+  sleep 10
+
+  curl "https://docs.portworx.com/samples/k8s/pxc/portworx-cluster-dashboard.json" -o portworx-cluster-dashboard.json && \
+  curl "https://docs.portworx.com/samples/k8s/pxc/portworx-node-dashboard.json" -o portworx-node-dashboard.json && \
+  curl "https://docs.portworx.com/samples/k8s/pxc/portworx-volume-dashboard.json" -o portworx-volume-dashboard.json && \
+  curl "https://docs.portworx.com/samples/k8s/pxc/portworx-performance-dashboard.json" -o portworx-performance-dashboard.json && \
+  curl "https://docs.portworx.com/samples/k8s/pxc/portworx-etcd-dashboard.json" -o portworx-etcd-dashboard.json && \
+
+  try "kubectl -n portworx create configmap grafana-dashboards --from-file=portworx-cluster-dashboard.json --from-file=portworx-performance-dashboard.json --from-file=portworx-node-dashboard.json --from-file=portworx-volume-dashboard.json --from-file=portworx-etcd-dashboard.json"
+
+  sleep 10
+
+  kubectl apply -f grafana.yaml
+  sleep 5
+  grafana_install_ran=true
+
+}
+
+gcp_utilserver_create () {
+
+  # This function creates a generic utility server. It updates the .ssh/config file
+  # and configures authentication.
+  # It installs docker (from the ubuntu repo, so a little old)
+
+  if [[ $gcp_utilserver_create_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing Util Server"
+
+  # Requires
+  install_utilities
+
+  try "gcloud compute instances create $UTILVM_NAME \
+    --zone=${zones[0]} \
+    --machine-type=e2-standard-2 \
+    --image-family=ubuntu-2204-lts \
+    --image-project=ubuntu-os-cloud \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-standard" 
+
+
+  try "gcloud compute firewall-rules create allow-http \
+    --allow tcp:80 \
+    --source-ranges=0.0.0.0/0"
+
+  try "gcloud compute firewall-rules create allow-https \
+    --allow tcp:443 \
+    --source-ranges=0.0.0.0/0"
+
+  try "gcloud compute firewall-rules create allow-ssh \
+    --allow tcp:22 \
+    --source-ranges=0.0.0.0/0"
+
+  try "gcloud compute firewall-rules create allow-k8s \
+    --allow tcp:6443 \
+    --source-ranges=0.0.0.0/0"
+
+
+
+
+
+  UTIL_IP=$(gcloud compute instances describe $UTILVM_NAME --zone=${zones[0]} --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+  add_bashrc "export UTIL_IP=${UTIL_IP}"    
+
+  GCPUSER=$(gcloud compute os-login describe-profile --format json |jq -r '.name')
+  ssh-keygen -t rsa -f ~/.ssh/util -C ubuntu -b 2048 -N ''
+
+  PUBLIC_KEY=$(cat ~/.ssh/util.pub)
+  gcloud compute instances add-metadata util1 --zone ${zones[0]} --metadata ssh-keys="ubuntu:${PUBLIC_KEY}"
+
+
+# Update the ssh config file
+  cat << EOF >> ~/.ssh/config
+Host $UTILVM_NAME
+  Hostname $UTIL_IP
+  User ubuntu
+  IdentityFile ~/.ssh/util
+  StrictHostKeyChecking no
+EOF
+
+
+# Install docker on our host
+ssh ubuntu@$UTILVM_NAME << EOF
+sudo apt update
+sudo apt install -y docker.io
+EOF
+
+  gcp_utilserver_create_ran=true
+
+}
+
+rancher_config_dns () {
+  if [[ $rancher_config_dns_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+
+  install_utilities
+  aws_auth_configure
+
+
+  RANCHER_DNS_NAME="rancher-${INSTRUQT_PARTICIPANT_ID}.instruqt.pxbbq.com"
+
+
+  logv2 "Configuring DNS for Rancher"
+
+
+cat > change-resource-record-sets-rancher.json << EOF
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "${RANCHER_DNS_NAME}",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "${UTIL_IP}"
+          }
+        ]
+      }
+    }
+  ]
+}
+EOF
+debug "$(cat change-resource-record-sets-rancher.json)"
+try "aws route53 change-resource-record-sets --hosted-zone-id $AWS_DNS_ZONE_ID --change-batch file://change-resource-record-sets-rancher.json"
+
+
+
+  rancher_config_dns_ran=true
+
+}
+
+gcp_utilserver_rancher () {
+
+  # This function configures the util server to run rancher in docker.
+  # It also configures authentication using the supplied password, loads
+  # environment variables, and creates a rancher cluster in the rancher server
+  # Note that you MUST run the AGENTCMD command on the worker nodes to join the cluster
+
+
+  if [[ $gcp_utilserver_rancher_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing Rancher on Util Server"
+
+  # Requires:
+  gcp_utilserver_create
+  rancher_config_dns
+  write_rancher_cluster
+
+  # Install Rancher
+ssh ubuntu@$UTILVM_NAME << EOF
+sudo docker run -d --restart=unless-stopped \
+  -p 80:80 -p 443:443 \
+  --privileged \
+  --name rancher \
+  rancher/rancher:${RANCHER_VERSION}
+EOF
+
+# The following can be added to use let's encryt. You should also consider updating the RANCHER_SERVER_URL var below as well as the [IN]SECURE_AGENTCMD that is used
+# --acme-domain ${RANCHER_DNS_NAME}
+
+  # We are going to wait here because we need to configure rancher as part of the same function
+  wait_ready_gcp_utilserver_rancher
+  # The above needs a few extra seconds
+  
+  # If we don't wait long enough, then the rancher cluster create command will fail because the webhook was not ready yet. We need a better test here.
+  sleep 60
+
+  # Extract the bootstrap password from the logs
+  RANCHER_BOOTSTRAP_PASSWORD=$(ssh ubuntu@$UTILVM_NAME "sudo docker logs rancher | grep \"Bootstrap Password\" | awk '{print \$6}'")
+  debug "RANCHER_BOOTSTRAP_PASSWORD: $RANCHER_BOOTSTRAP_PASSWORD"
+
+  # Log in to rancher using the bootstrap password
+  RANCHER_RESPONSE=`curl -s "https://$UTIL_IP/v3-public/localProviders/local?action=login" -H 'content-type: application/json' --data-binary "{\"username\":\"admin\",\"password\":\"$RANCHER_BOOTSTRAP_PASSWORD\"}" --insecure`
+  debug "RANCHER_RESPONSE: $RANCHER_RESPONSE"
+
+  # Extract the API token from the response
+  RANCHER_TOKEN=`echo $RANCHER_RESPONSE | jq -r .token`
+  debug "RANCHER_TOKEN: $RANCHER_TOKEN"
+
+  # Add the token to our BASHRC file
+  add_bashrc "export RANCHER_TOKEN=${RANCHER_TOKEN}"
+
+  # Change the password to the one provided in the global vars section
+  curl -s "https://$UTIL_IP/v3/users?action=changepassword" -H 'content-type: application/json' -H "Authorization: Bearer $RANCHER_TOKEN" --data-binary "{\"currentPassword\":\"$RANCHER_BOOTSTRAP_PASSWORD\",\"newPassword\":\"$RANCHER_PASSWORD\"}" --insecure
+  debug "Logged in to rancher using curl"
+
+  # Updated for v0.2.4
+  RANCHER_SERVER_URL="https://$UTIL_IP"
+  #RANCHER_SERVER_URL="https://${RANCHER_DNS_NAME}"
+  debug "RANCHER_SERVER_URL: $RANCHER_SERVER_URL"
+  add_bashrc "export RANCHER_SERVER_URL=${RANCHER_SERVER_URL}"
+
+  # Create a kubectl context for rancher server
+  kubectl config set-cluster ${RANCHER_SERVER_CONTEXT} --server=${RANCHER_SERVER_URL}  --insecure-skip-tls-verify
+  kubectl config set-credentials ${RANCHER_SERVER_CONTEXT} --token=${RANCHER_TOKEN}
+  kubectl config set-context ${RANCHER_SERVER_CONTEXT} --cluster=rancher --user=rancher
+  kubectl config use-context ${RANCHER_SERVER_CONTEXT}
+
+  debug "setting server url"
+  # Set the server URL
+  curl -s "${RANCHER_SERVER_URL}/v3/settings/server-url" -H 'content-type: application/json' -H "Authorization: Bearer $RANCHER_TOKEN" -X PUT --data-binary '{"name":"server-url","value":"'$RANCHER_SERVER_URL'"}' --insecure > /dev/null
+
+  # Create a new cluster
+  # CLUSTERRESPONSE=`curl -s "https://$UTIL_IP/v3/cluster" -H 'content-type: application/json' -H "Authorization: Bearer $RANCHER_TOKEN" --data-binary '{"dockerRootDir":"/var/lib/docker","enableNetworkPolicy":false,"type":"cluster","rancherKubernetesEngineConfig":{"addonJobTimeout":30,"ignoreDockerVersion":true,"sshAgentAuth":false,"type":"rancherKubernetesEngineConfig","authentication":{"type":"authnConfig","strategy":"x509"},"network":{"type":"networkConfig","plugin":"canal"},"ingress":{"type":"ingressConfig","provider":"nginx"},"monitoring":{"type":"monitoringConfig","provider":"metrics-server"},"services":{"type":"rkeConfigServices","kubeApi":{"podSecurityPolicy":false,"type":"kubeAPIService"},"etcd":{"snapshot":false,"type":"etcdService","extraArgs":{"heartbeat-interval":500,"election-timeout":5000}}}},"name":"cluster1"}' --insecure`
+  # This should be moved to kube api
+  kubectl --context ${RANCHER_SERVER_CONTEXT} apply -f rancher-cluster.yaml
+
+  # Get the CLUSTER ID
+    CLUSTERID=$(kubectl --context ${RANCHER_SERVER_CONTEXT} -n fleet-default get clusters.provisioning.cattle.io ${RANCHER_CLUSTER_NAME} -o yaml | yq -r .status.clusterName)
+  debug "CLUSTERID: $CLUSTERID"
+
+  # It seems that we don't get an agent command immediatly. We need a better check command for agent command
+  debug "sleeping for 60 seconds as a hack to fix null AGENTCMD"
+  sleep 60
+
+  curl -s 'https://'${UTIL_IP}'/v3/clusterregistrationtoken' -H 'content-type: application/json' -H "Authorization: Bearer $APITOKEN" --data-binary '{"type":"clusterRegistrationToken","clusterId":"'$CLUSTERID'"}' --insecure
+  
+  until [[ $AGENTCMD != "" ]]; do
+    AGENTCMD=`curl -s 'https://'${UTIL_IP}'/v3/clusterregistrationtoken?id="'$CLUSTERID'"' -H 'content-type: application/json' -H "Authorization: Bearer $RANCHER_TOKEN" --insecure | jq -r '.data[].nodeCommand' | head -1`
+    debug "AGENTCMD: $AGENTCMD"
+    debug "agentcmd full output: "
+    sleep 10
+  done
+
+  # We need to add an --insecure flag to our curl command. There has to be a better way to do this
+  INSECURE_AGENTCMD="$(echo $AGENTCMD | sed 's/curl/curl --insecure/g') --etcd --controlplane --worker"
+  SECURE_AGENTCMD="$(echo $AGENTCMD) --etcd --controlplane --worker"
+  SECURE_AGENTCMD=$(echo "$SECURE_AGENTCMD" | sed 's|sudo |sudo CATTLE_AGENT_STRICT_VERIFY=false |')
+  debug "SECURE_AGENTCMD: $SECURE_AGENTCMD"
+  debug "INSECURE_AGENTCMD: $INSECURE_AGENTCMD"
+  # Now that we have our command, let's provision the cluster
+  PUBLIC_KEY=$(cat ~/.ssh/util.pub)
+
+  
+  gcp_utilserver_rancher_ran=true
+
+}
+
+gcp_rke_install () {
+
+  # Installs RKE2 on servers that we provision.
+  # Note that we use the command specified by the rancher server, so 
+  # a running rancher server is required to supply the INSECURE_AGENTCMD
+  if [[ $gcp_rke_install_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  logv2 "Installing RKE"
+
+  # Requires:
+  gcp_utilserver_create
+  gcp_utilserver_rancher
+
+# Open up the firewall
+  gcloud compute firewall-rules create allow-all-ports \
+    --direction=INGRESS \
+    --priority=1000 \
+    --network=default \
+    --action=ALLOW \
+    --rules=all \
+    --source-ranges=0.0.0.0/0
+  
+  # Get ubuntu image
+  get_ubuntu_image
+
+  declare -a nodes=("rancher1" "rancher2" "rancher3")
+  log "Creating RKE nodes"
+  for node in "${nodes[@]}"
+  do
+  log "Creating $node VM"
+  try "gcloud compute instances create $node \
+  --zone=${zones[0]} \
+  --machine-type=e2-standard-8 \
+  --image=$UBUNTU_IMAGE_NAME \
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=40GB \
+  --boot-disk-type=pd-standard" 
+  IP=$(gcloud compute instances describe $node --zone=${zones[0]} --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+  debug "configuring ssh public key"
+  debug "IP: $IP"
+  gcloud compute instances add-metadata $node --zone ${zones[0]} --metadata ssh-keys="ubuntu:${PUBLIC_KEY}"
+  
+  debug "add disks for portworx"
+  try "gcloud compute disks create ${node}-disk --size 20 --type pd-balanced --zone ${zones[0]}"
+  try "gcloud compute instances attach-disk ${node} --disk ${node}-disk --device-name=sdb --zone ${zones[0]}"
+
+  debug "Updating ssh config file"
+  # Update the ssh config file
+  cat << EOF >> ~/.ssh/config
+Host $node
+  Hostname $IP
+  User ubuntu
+  IdentityFile ~/.ssh/util
+  StrictHostKeyChecking no
+EOF
+
+sleep 15
+
+
+log "SSHing to $node to install rancher"
+debug "using command: $AGENTCMD"
+  ssh ubuntu@$node << EOF
+#sudo apt-get update
+#sudo apt-get upgrade -y
+#sudo apt install -y docker.io
+sleep 5
+
+$INSECURE_AGENTCMD
+EOF
+
+#changed the above to $AGENTCMD from INSECURE_AGENTCMD
+
+done
+
+
+## Create our new rancher context
+    CONTEXT_URL="$(kubectl --context ${RANCHER_SERVER_CONTEXT} config view --flatten --minify | yq -r .clusters[0].cluster.server)/k8s/clusters/$(kubectl --context ${RANCHER_SERVER_CONTEXT} -n fleet-default get clusters.provisioning.cattle.io ${RANCHER_CLUSTER_NAME} -o yaml | yq -r .status.clusterName)"
+    kubectl config set-cluster ${RANCHER_CLUSTER_NAME} --server=${CONTEXT_URL}  --insecure-skip-tls-verify
+    kubectl config set-context ${RANCHER_CLUSTER_NAME} --cluster=${RANCHER_CLUSTER_NAME} --user=${RANCHER_SERVER_CONTEXT}
+    kubectl config use-context ${RANCHER_CLUSTER_NAME}
+
+
+# Because we want to use the same px-spec, we will overwrite the version variable
+
+  K8SVERSION=$RANCHER_K8S_VERSION
+
+  gcp_rke_install_ran=true
+
+}
+
+px_clusterpair () {
+
+  # Pairs two clusters together using StorkCTL
+  # The two clusters must be named cluster1 and cluster2
+  # The contexts are set by the cluster create commands
+  #   gke_create_cluster
+  #  gke_create_cluster_dr
+  # Note that we only support gke for now
+
+  if [[ $px_clusterpair_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+  # Requirements
+  # This is a todo for right now
+
+
+
+      
+    # until [[ $(kubectl --context cluster1 -n portworx get svc portworx-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}') != "" ]]; do
+    #     debug "$(kubectl --context cluster1 -n portworx get svc portworx-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+    #     echo "Waiting for cluster1 portworx-api to be ready"
+    #     sleep 10
+    # done
+ 
+    # until [[ $(kubectl --context cluster2 -n portworx get svc portworx-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}') != "" ]]; do
+    #     debug "$(kubectl --context cluster2 -n portworx get svc portworx-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+    #     echo "Waiting for cluster2 portworx-api to be ready"
+    #     sleep 10
+    # done
+
+    CLUSTER1_PORTWORX_API="$(kubectl --context cluster1 -n portworx get svc portworx-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):9001"
+    CLUSTER2_PORTWORX_API="$(kubectl --context cluster2 -n portworx get svc portworx-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):9001"
+
+    # Let's create our service accounts and kubeconfig files:
+    create_sa_and_kubeconfig cluster1 $GKE_CLUSTERNAME ${zones[0]}
+    create_sa_and_kubeconfig cluster2 $GKE_CLUSTERNAME_DR ${zones[0]}
+
+    kubectl config use-context cluster2
+    pxctl license activate --ep UAT ${PXENT_LICENSE}
+    kubectl config use-context cluster1
+    pxctl license activate --ep UAT ${PXENT_LICENSE}
+
+    log "Creating cluster pair"
+    storkctl create clusterpair demo \
+    --dest-kube-file /root/dr-sa-kubeconfig-cluster2 \
+    --src-kube-file /root/dr-sa-kubeconfig-cluster1 \
+    --dest-ep $CLUSTER2_PORTWORX_API \
+    --src-ep $CLUSTER1_PORTWORX_API \
+    --namespace portworx \
+    --provider s3 \
+    --s3-endpoint $MINIO_ENDPOINT \
+    --s3-access-key $MINIO_ACCESS_KEY \
+    --s3-secret-key $MINIO_SECRET_KEY \
+    --s3-region us-central-1 \
+    --disable-ssl \
+
+}
+
+ocp_ssl_config () {
+
+  if [[ $ocp_ssl_config_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+
+  logv2 "Configuring SSL for OCP"
+
+  # Requires:
+  write_ocp_ssl
+
+  # Create a new project for cert-manager
+  oc create ns cert-manager
+  oc new-project cert-manager-operator
+
+  # Install cert-manager
+  try "oc apply -f cert-manager-install.yaml" wait=5 retry=5
+
+  # store existing service account key as a secret
+  echo $INSTRUQT_GCP_PROJECT_GCPPROJECT_SERVICE_ACCOUNT_KEY | base64 -d > key.json
+  oc -n cert-manager create secret generic clouddns-dns01-solver-svc-acct \
+    --from-file=key.json
+  unlink key.json
+
+  # Tell cert-manager to use external DNS
+  try "oc patch certmanager cluster --type=merge --patch \"$(cat cert-manager-patch.yaml)\"" wait=15 retry=10
+
+  # Create the issuer and certificate
+  try "oc apply -f ocp-cert-manager-issuers.yaml" wait=15 retry=10
+  try "oc apply -f ocp-cert-manager-certs.yaml" wait=15 retry=10
+
+
+  oc patch ingresscontroller default -n openshift-ingress-operator --type=merge --patch='{"spec": { "defaultCertificate": { "name": "router-certs-letsencrypt" }}}' --insecure-skip-tls-verify
+
+  ocp_ssl_config_ran=true
+
+
+
+}
+
+
+#################################################################
+# META functions
+
+meta_gke_cluster_install () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  gke_create_cluster
+  wait_ready_gke_cluster
+  gke_config_ssh
+  gke_add_localdisk
+  gke_add_clusterrolebinding
+  
+  log "$FUNCNAME[0] Workflow Complete"
+}
+
+meta_gke_portworx_install () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  gke_create_cluster
+  wait_ready_gke_cluster
+  gke_config_ssh
+  gke_add_localdisk
+  gke_add_clusterrolebinding
+
+  # Install Portworx
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false
+  wait_ready_portworx
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  grafana_install # This function will not trigger without the feature flag
+  log "$FUNCNAME[0] Workflow Complete"
+
+}
+
+meta_gke_portworx_clouddrives () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  gke_create_cluster
+  wait_ready_gke_cluster
+  gke_config_ssh
+  gke_add_clusterrolebinding
+
+  # Install Portworx
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false clouddrives=true
+  wait_ready_portworx
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  grafana_install # This function will not trigger without the feature flag
+  log "Portworx Installation Workflow Complete"
+
+}
+
+meta_gke_pxbackup_install () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  gke_create_cluster
+  wait_ready_gke_cluster
+  gke_config_ssh
+  gke_add_localdisk
+  gke_add_clusterrolebinding
+
+  # Install Portworx
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false
+  wait_ready_portworx
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  pxbackup_install
+  minio_install
+  wait_ready_minio
+  minio_config
+  wait_ready_pxbackup
+  pxbackup_config
+
+  log "$FUNCNAME[0] Workflow Complete"
+
+}
+
+meta_gke_pxbackup_base () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+
+  gke_create_cluster
+  wait_ready_gke_cluster
+  gke_config_ssh
+  gke_add_localdisk
+  gke_add_clusterrolebinding
+
+  # Install Portworx
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false
+  wait_ready_portworx
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  minio_install
+  wait_ready_minio
+  minio_config
+
+
+  log "PXBACKUP BASE Installation Workflow Complete"
+
+}
+
+meta_gcp_ocp_install () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  # Disable nginx customization
+  write_nginx_config_ran=true
+
+  ocp_create_cluster
+  ocp_config
+  ocp_ssl_config 
+
+  oc project default
+
+  log "$FUNCNAME[0] Workflow Complete"
+
+}
+
+meta_gcp_ocp_pxe () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  # Disable nginx customization
+  write_nginx_config_ran=true
+
+  ocp_create_cluster
+  ocp_config
+  ocp_portworx_operator_install
+  portworx_install auth=false encrypt=false clouddrives=true bypass_requirements=true
+  ocp_ssl_config
+  wait_ready_portworx
+  ocp_config_post_pxe
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  oc project default
+
+
+  log "$FUNCNAME[0] Workflow Complete"
+
+}
+
+
+meta_write_files () {
+  logv2 "Writing Files"
+
+  write_gke_nodeconfig
+  write_pxbbq
+  write_px_repl3
+  write_ocp_install_config
+
+  log "$FUNCNAME[0] Workflow Complete"
+}
+
+meta_gcp_rancher_base () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  gcp_utilserver_create
+
+  gcp_utilserver_rancher
+
+  gcp_rke_install
+
+  wait_ready_rancher_cluster
+  
+  log "$FUNCNAME[0] Workflow Complete"
+}
+
+meta_gcp_rancher_install () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  gcp_utilserver_create
+
+  gcp_utilserver_rancher
+
+  gcp_rke_install
+
+  # Disabled for troubleshooting
+  wait_ready_rancher_cluster
+  
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install
+  wait_ready_portworx
+
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  log "$FUNCNAME[0] Workflow Complete"
+}
+
+meta_gke_portworx_dr_install () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  create_ssh_keypair
+
+  gke_create_cluster
+  gke_create_cluster_dr
+  wait_ready_gke_cluster
+  gke_config_ssh
+  wait_ready_gke_cluster_dr
+  gke_config_ssh_dr
+  gke_add_localdisk
+
+  gke_add_clusterrolebinding 
+  gke_add_clusterrolebinding_dr
+
+  # Install Portworx
+
+
+  try "kubectl config use-context cluster2"
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false
+
+  # Because our functions are idempotent, we need to reset the _ran variables
+  portworx_install_operator_ran=false
+  portworx_install_ran=false
+  
+  try "kubectl config use-context cluster1"
+
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false
+
+
+  wait_ready_portworx
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  # pxbackup_install
+  minio_install
+  wait_ready_minio
+  minio_config
+  # wait_ready_pxbackup
+  # pxbackup_config
+
+  px_clusterpair
+
+  log "$FUNCNAME[0] Workflow Complete"
+
+}
+
+meta_gke_kubecon2024 () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  create_ssh_keypair
+
+  gke_create_cluster
+  gke_create_cluster_dr
+  wait_ready_gke_cluster
+  gke_config_ssh
+  wait_ready_gke_cluster_dr
+  gke_config_ssh_dr
+  gke_add_localdisk
+
+  gke_add_clusterrolebinding 
+  gke_add_clusterrolebinding_dr
+
+  # Install Portworx
+  try "kubectl config use-context cluster2"
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false
+
+  portworx_install_operator_ran=false
+  portworx_install_ran=false
+  
+  try "kubectl config use-context cluster1"
+
+  portworx_install_operator
+  wait_ready_portworx_operator
+  portworx_install auth=false encrypt=false
+
+
+  wait_ready_portworx
+  portworx_install_storkctl
+  alias_pxctl auth=false
+
+  grafana_install # This function will not trigger without the feature flag
+
+  pxbackup_install
+  minio_install
+  wait_ready_minio
+  minio_config
+  wait_ready_pxbackup
+  pxbackup_config
+
+  px_clusterpair
+
+  log "$FUNCNAME[0] Workflow Complete"
+
+}
+
+meta_gcp_ocp_pxb () {
+  logv2 "Running workflow $FUNCNAME[0]"
+
+  # Disable nginx customization
+  write_nginx_config_ran=true
+
+  ocp_create_cluster
+  ocp_config
+  ocp_portworx_operator_install
+  portworx_install auth=false encrypt=false clouddrives=true bypass_requirements=true
+  ocp_ssl_config
+  wait_ready_portworx
+  ocp_config_post_pxe
+  portworx_install_storkctl
+  alias_pxctl auth=false
+  pxbackup_install
+  minio_install
+  wait_ready_minio
+  minio_config
+  wait_ready_pxbackup
+  pxbackup_config
+
+  oc project default
+
+
+  log "$FUNCNAME[0] Workflow Complete"
+
+}
+
+#################################################################
+# File Write functions
+# Write any files we need to use. This section will be a mess.
+
+
+write_ocp_portworx_role () {
+cat << EOF > ocp-px-role.yaml
+title: "Portworx role"
+description: "Portworx role for managed disks"
+stage: "GA"
+includedPermissions:
+- compute.disks.addResourcePolicies
+- compute.disks.create
+- compute.disks.createSnapshot
+- compute.disks.delete
+- compute.disks.get
+- compute.disks.getIamPolicy
+- compute.disks.list
+- compute.disks.removeResourcePolicies
+- compute.disks.resize
+- compute.disks.setIamPolicy
+- compute.disks.setLabels
+- compute.disks.update
+- compute.disks.use
+- compute.disks.useReadOnly
+- compute.instances.attachDisk
+- compute.instances.detachDisk
+- compute.instances.get
+- compute.nodeGroups.get
+- compute.nodeGroups.getIamPolicy
+- compute.nodeGroups.list
+- compute.zoneOperations.get
+- container.clusters.get
+EOF
+}
+
+write_ocp_px_operatorgroup () {
+cat << EOF > ocp-px-operatorgroup.yaml
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: portworx-certified
+  namespace: portworx
+spec:
+  targetNamespaces:
+  - portworx
+EOF
+}
+
+write_ocp_px_operator_subscription () {
+cat << EOF > ocp-px-operator-subscription.yaml
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: portworx-operator
+  namespace: portworx 
+spec:
+  channel: stable 
+  name: portworx-certified
+  source: certified-operators 
+  sourceNamespace: openshift-marketplace 
+  startingCSV: "portworx-operator.v24.1.1"
+EOF
+}
+
+write_gke_nodeconfig () {
+cat << EOF > gke-nodeconfig.yaml
+linuxConfig:
+  cgroupMode: 'CGROUP_MODE_V1'
+EOF
+}
+
+write_pxbbq () {
+cat << EOF > pxbbq-mongo.yaml
+# Create MongoDB Database for PXBBQ
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  labels:
+    app.kubernetes.io/name: mongo
+    app.kubernetes.io/component: backend
+  namespace: pxbbq
+spec:
+  serviceName: "mongo"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mongo
+      app.kubernetes.io/component: backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mongo
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:7.0.9
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: porxie
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: "porxie"
+        args:
+        - "--bind_ip"
+        - "0.0.0.0"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-data-dir
+          mountPath: /data/db
+        livenessProbe:
+          exec:
+            command: ["mongosh", "--eval", "db.adminCommand({ping: 1})"]
+          initialDelaySeconds: 30  # Give MongoDB time to start before the first check
+          timeoutSeconds: 5
+          periodSeconds: 10  # How often to perform the probe
+          failureThreshold: 3 
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 10
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 10
+      terminationGracePeriodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data-dir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: px-csi-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  labels:
+    app.kubernetes.io/name: mongo
+    app.kubernetes.io/component: backend
+  namespace: pxbbq
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: mongo
+    app.kubernetes.io/component: backend
+EOF
+
+cat << EOF > pxbbq-web.yaml
+---
+apiVersion: apps/v1
+kind: Deployment                 
+metadata:
+  name: pxbbq-web  
+  namespace: pxbbq         
+spec:
+  replicas: 3                    
+  selector:
+    matchLabels:
+      app: pxbbq-web
+  template:                      
+    metadata:
+      labels:                    
+        app: pxbbq-web
+    spec:                        
+      containers:
+      - name: pxbbq-web
+        image: eshanks16/pxbbq:v4.3.1
+        env:
+        - name: MONGO_INIT_USER
+          value: "porxie" #Mongo User with permissions to create additional databases and users. Typically "porxie" or "pds"
+        - name: MONGO_INIT_PASS
+          value: "porxie" #Required to connect the init user to the database. If using the mongodb yaml supplied, use "porxie"
+        - name: MONGO_NODES
+          value: "mongo" #COMMA SEPARATED LIST OF MONGO ENDPOINTS. Example: mongo1.dns.name,mongo2.dns.name
+        - name: MONGO_PORT
+          value: "27017" # MongoDB Port
+        - name: MONGO_USER
+          value: porxie #Mongo DB User that will be created by using the Init_User
+        - name: MONGO_PASS
+          value: "porxie" #Mongo DB Password for User that will be created by using the Init User
+          ########## CHATBOT SECTION #############
+        - name: CHATBOT_ENABLED #If CHATBOT is set to False, the other variables in this section are not needed.
+          value: "False" #Set to True to enable a LLAMA3 chatbot - Requires the AIDemo to be deployed first
+        - name: PXBBQ_URI
+          value: "http://EXTERNAL_PXBBQ_URL_GOES_HERE" #MUST Be the external svc name for the PXBBQ application (PXBBQ NodePort/LoadBalaner)
+        - name: MODEL_SERVER_URI
+          value: "http://ollama.genai.svc.cluster.local:11434" #MUST be the internal svc name for the ollama service (CLUSERIP)
+        - name: NEO4J_URI
+          value: "bolt://database.genai.svc.cluster.local:7687" #MUST be the internal svc name for the new4j service (CLUSTERIP)
+        ############# CI/CD Demo Section ##############
+        - name: ARCHIVE_ORDERS
+          value: "False" #USED FOR CI/CD Database testing demos. Setting this to TRUE Wipes out all previous orders
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz # Health check built into PXBBQ
+            port: 8080
+          #initialDelaySeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz # Health check built into PXBBQ
+            port: 8080
+          initialDelaySeconds: 15 
+          timeoutSeconds: 3  
+          periodSeconds: 10  
+          failureThreshold: 1 
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 10
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 10
+      terminationGracePeriodSeconds: 0
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pxbbq-svc
+  namespace: pxbbq
+  labels:
+    app: pxbbq-web
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30000
+  type: NodePort
+  selector:
+    app: pxbbq-web
+EOF
+}
+write_px_repl3 () {
+cat << EOF > ~/px-repl3.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-repl3
+parameters:
+  io_profile: db_remote
+  repl: "3"
+provisioner: pxd.portworx.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+EOF
+}
+write_ocp_install_config () {
+# Create Install Config file of openshift-install
+# Obviously we need gcp region, zone and retry logic here
+mkdir ${OCP_INSTALL_DIR}
+chmod +x ${OCP_INSTALL_DIR}
+cat << EOF > ${OCP_INSTALL_DIR}/install-config.yaml
+additionalTrustBundlePolicy: Proxyonly
+apiVersion: v1
+baseDomain: ${OCP_DNS_ZONE}
+compute:
+- architecture: amd64
+  hyperthreading: Enabled
+  name: worker
+  platform: {}
+  replicas: 0
+controlPlane:
+  architecture: amd64
+  hyperthreading: Enabled
+  name: master
+  platform:
+    gcp:
+      type: n2-standard-8
+      zones:
+      - ${zones[0]}
+      - ${zones[1]}
+      - ${zones[2]}
+      osDisk:
+        diskType: pd-ssd
+        diskSizeGB: 200
+  replicas: 3
+metadata:
+  creationTimestamp: null
+  name: ocp
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.0.0.0/16
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  gcp:
+    projectID: ${INSTRUQT_GCP_PROJECT_GCPPROJECT_PROJECT_ID}
+    region: ${region}
+publish: External
+pullSecret: '{"auths":{"cloud.openshift.com":{"auth":"${CCROW_REDHAT_PULLSECRET}","email":"ccrow@purestorage.com"},"quay.io":{"auth":"${CCROW_REDHAT_PULLSECRET}","email":"ccrow@purestorage.com"},"registry.connect.redhat.com":{"auth":"${CCROW_REDHAT_REGISTRYSECRET}","email":"ccrow@purestorage.com"},"registry.redhat.io":{"auth":"${CCROW_REDHAT_REGISTRYSECRET}","email":"ccrow@purestorage.com"}}}'
+sshKey: |
+  ${SSH_ID_PUB}
+EOF
+}
+
+write_rancher_cluster () {
+  cat << EOF > rancher-cluster.yaml
+apiVersion: provisioning.cattle.io/v1
+kind: Cluster
+metadata:
+  name: ${RANCHER_CLUSTER_NAME}
+  namespace: fleet-default
+spec:
+  kubernetesVersion: ${RANCHER_K8S_VERSION}
+  localClusterAuthEndpoint: {}
+  rkeConfig:
+    chartValues:
+      rke2-calico: {}
+    dataDirectories: {}
+    etcd:
+      snapshotRetention: 5
+      snapshotScheduleCron: 0 */5 * * *
+    machineGlobalConfig:
+      cni: calico
+      disable-kube-proxy: false
+      etcd-expose-metrics: false
+    machinePoolDefaults: {}
+    machineSelectorConfig:
+    - config:
+        protect-kernel-defaults: false
+    registries: {}
+    upgradeStrategy:
+      controlPlaneConcurrency: "1"
+      controlPlaneDrainOptions:
+        deleteEmptyDirData: true
+        disableEviction: false
+        enabled: false
+        force: false
+        gracePeriod: -1
+        ignoreDaemonSets: true
+        ignoreErrors: false
+        postDrainHooks: null
+        preDrainHooks: null
+        skipWaitForDeleteTimeoutSeconds: 0
+        timeout: 120
+      workerConcurrency: "1"
+      workerDrainOptions:
+        deleteEmptyDirData: true
+        disableEviction: false
+        enabled: false
+        force: false
+        gracePeriod: -1
+        ignoreDaemonSets: true
+        ignoreErrors: false
+        postDrainHooks: null
+        preDrainHooks: null
+        skipWaitForDeleteTimeoutSeconds: 0
+        timeout: 120
+EOF
+
+}
+
+write_nginx_config () {
+  # We are using append and can only run this once!!!
+  if [[ $write_nginx_config_ran == true ]]; then
+    log "${FUNCNAME[0]} has already run, skipping"
+    return 0
+  fi
+
+
+if [[ $K8SVERSION == *rke2r1 ]]; then
+  log "RKE2 detected. Using get_host_ip_sshconfig"
+  # We need to use a different method to get node IPs
+  NODE1=$(get_host_ip_sshconfig rancher1)
+  NODE2=$(get_host_ip_sshconfig rancher2)
+  NODE3=$(get_host_ip_sshconfig rancher3)
+  debug "NODE1: $NODE1"
+  debug "NODE2: $NODE2"
+  debug "NODE3: $NODE3"
+  # Add rancher server to port 85
+  log "Adding Rancher Server to port 85"
+  cat << EOF >> /etc/nginx/sites-enabled/default
+upstream rancher {
+  server $UTIL_IP:80;
+}
+server {
+listen 85;
+server_name rancher;
+    location / {
+        proxy_pass http://rancher;
+        expires -1;
+    }
+}
+EOF
+else
+  log "Rancher not detected, using kubectl to get node IPs"
+  NODE1=$(kubectl get nodes -o json | jq '.items[0] | .status .addresses[] | select(.type=="ExternalIP") | .address' | jq -r ."")
+  NODE2=$(kubectl get nodes -o json | jq '.items[1] | .status .addresses[] | select(.type=="ExternalIP") | .address' | jq -r ."")
+  NODE3=$(kubectl get nodes -o json | jq '.items[2] | .status .addresses[] | select(.type=="ExternalIP") | .address' | jq -r ."")
+fi
+
+
+if [[ $gke_create_cluster_dr_ran == true ]]; then
+  log "GKE DR detected, using kubectl to get node IPs"
+  DRNODE1=$(kubectl --context cluster2 get nodes -o json | jq '.items[0] | .status .addresses[] | select(.type=="ExternalIP") | .address' | jq -r ."")
+  DRNODE2=$(kubectl --context cluster2 get nodes -o json | jq '.items[1] | .status .addresses[] | select(.type=="ExternalIP") | .address' | jq -r ."")
+  DRNODE3=$(kubectl --context cluster2 get nodes -o json | jq '.items[2] | .status .addresses[] | select(.type=="ExternalIP") | .address' | jq -r ."")
+
+
+cat << EOF >> /etc/nginx/sites-enabled/default
+upstream k8s-workers-PX_BBQ_DR {
+    zone pxbbq 64k;
+    server $DRNODE1:30000 max_fails=2 fail_timeout=1s;
+    server $DRNODE2:30000 max_fails=2 fail_timeout=1s;
+    server $DRNODE3:30000 max_fails=2 fail_timeout=1s;
+}
+server {
+listen 87;
+server_name PX_BBQ;
+    location / {
+        proxy_pass http://k8s-workers-PX_BBQ_DR;
+        expires -1;
+    }
+}
+upstream k8s-workers-BOOKKEEPER_DR {
+    zone bookkeeper 64k;
+    server $DRNODE1:30002 max_fails=2 fail_timeout=1s;
+    server $DRNODE2:30002 max_fails=2 fail_timeout=1s;
+    server $DRNODE3:30002 max_fails=2 fail_timeout=1s;
+}
+server {
+listen 88;
+server_name BOOKKEEPER;
+    location / {
+        proxy_pass http://k8s-workers-BOOKKEEPER_DR;
+        expires -1;
+    }
+}
+EOF
+fi
+if [[ $ocp_config_ran == true ]]; then
+  log "OCP detected, adding OCP specific NGINX config"
+   cat << EOF >> /etc/nginx/sites-enabled/default
+upstream ocp {
+  server console-openshift-console.apps.ocp.${OCP_DNS_ZONE}:80;
+}
+server {
+listen 86;
+server_name ocp;
+    location / {
+        proxy_pass https://ocp;
+        expires -1;
+    }
+}
+EOF
+fi
+
+
+
+cat << EOF >> /etc/nginx/sites-enabled/default
+upstream k8s-workers-PX_BBQ {
+    zone pxbbq 64k;
+    server $NODE1:30000 max_fails=2 fail_timeout=1s;
+    server $NODE2:30000 max_fails=2 fail_timeout=1s;
+    server $NODE3:30000 max_fails=2 fail_timeout=1s;
+}
+
+upstream k8s-workers-app1 {
+    server $NODE1:30001;
+    server $NODE2:30001;
+    server $NODE3:30001;
+}
+
+upstream k8s-workers-app2 {
+    server $NODE1:30002;
+    server $NODE2:30002;
+    server $NODE3:30002;
+}
+
+upstream k8s-workers-PXDemoApp {
+    server $NODE1:30003;
+    server $NODE2:30003;
+    server $NODE3:30003;
+}
+
+
+server {
+listen 81;
+server_name PX_BBQ;
+    location / {
+        proxy_pass http://k8s-workers-PX_BBQ;
+        expires -1;
+    }
+}
+
+server {
+listen 82;
+server_name app1;
+    location / {
+        proxy_pass http://k8s-workers-app1;
+        expires -1;
+    }
+}
+
+server {
+listen 83;
+server_name app2;
+    location / {
+        proxy_pass http://k8s-workers-app2;
+        expires -1;
+    }
+}
+
+server {
+    listen 84;
+    server_name PXDemoApp;
+    location / {
+        proxy_pass http://k8s-workers-PXDemoApp;
+        expires -1;
+    }
+
+    location /watch {
+        proxy_pass http://k8s-workers-PXDemoApp;
+        expires -1;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade; 
+        proxy_set_header Connection "upgrade";
+        # Set headers conditionally
+        set \$upgr \$http_upgrade;
+        if (\$http_upgrade = "") {
+            set \$upgr none;
+        }
+        proxy_set_header Upgrade \$upgr;
+    }
+}
+EOF
+}
+
+
+
+write_grafana_config () {
+
+logv2 "Writing Grafana Config"
+
+cat << EOF >> grafana-dashboard-config.yaml
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards
+EOF
+
+cat << EOF >> grafana-datasource.yaml
+    # config file version
+    apiVersion: 1
+    # list of datasources that should be deleted from the database
+    deleteDatasources:
+      - name: prometheus
+        orgId: 1
+    # list of datasources to insert/update depending
+    # whats available in the database
+    datasources:
+      # <string, required> name of the datasource. Required
+    - name: prometheus
+      # <string, required> datasource type. Required
+      type: prometheus
+      # <string, required> access mode. direct or proxy. Required
+      access: proxy
+      # <int> org id. will default to orgId 1 if not specified
+      orgId: 1
+      # <string> url
+      url: http://px-prometheus:9090
+      # <string> database password, if used
+      password:
+      # <string> database user, if used
+      user:
+      # <string> database name, if used
+      database:
+      # <bool> enable/disable basic auth
+      basicAuth: true
+      # <string> basic auth username
+      basicAuthUser: admin
+      # <string> basic auth password
+      basicAuthPassword: foobar
+      # <bool> enable/disable with credentials headers
+      withCredentials:
+      # <bool> mark as default datasource. Max one per org
+      isDefault:
+      # <map> fields that will be converted to json and stored in json_data
+      jsonData:
+        graphiteVersion: "1.1"
+        tlsAuth: false
+        tlsAuthWithCACert: false
+      # <string> json object of data that will be encrypted.
+      secureJsonData:
+        tlsCACert: "..."
+        tlsClientCert: "..."
+        tlsClientKey: "..."
+      version: 1
+      # <bool> allow users to edit datasources from the UI.
+      editable: true
+EOF
+
+cat << EOF >> grafana.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: portworx
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - image: grafana/grafana:7.3.0
+          name: grafana
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+          volumeMounts:
+            - name: grafana-dash-config
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard-templates
+              mountPath: /var/lib/grafana/dashboards
+            - name: grafana-source-config
+              mountPath: /etc/grafana/provisioning/datasources
+      volumes:
+        - name: grafana-source-config
+          configMap:
+            name: grafana-source-config
+        - name: grafana-dash-config
+          configMap:
+            name: grafana-dashboard-config
+        - name: dashboard-templates
+          configMap:
+            name: grafana-dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-svc
+  namespace: portworx
+  labels:
+    app: grafana
+spec:
+  type: NodePort
+  selector:
+    app: grafana
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+    nodePort: 30001
+    name: grafana
+EOF
+}
+
+write_ocp_osv () {
+cat << EOF > ocp-osv.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-cnv
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: kubevirt-hyperconverged-group
+  namespace: openshift-cnv
+spec:
+  targetNamespaces:
+    - openshift-cnv
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: hco-operatorhub
+  namespace: openshift-cnv
+spec:
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  name: kubevirt-hyperconverged
+  startingCSV: kubevirt-hyperconverged-operator.v4.16.2
+  channel: "stable" 
+  config:
+    env:
+    - name: KVM_EMULATION
+      value: "true"
+EOF
+
+cat << EOF > ocp-osv-obj.yaml
+apiVersion: hco.kubevirt.io/v1beta1
+kind: HyperConverged
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: openshift-cnv
+spec:
+  filesystemOverhead:
+    global: "0.08" 
+EOF
+
+}
+
+write_ocp_ssl () {
+
+  cat << EOF > cert-manager-install.yaml
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-cert-manager-operator
+  namespace: cert-manager-operator
+spec:
+  targetNamespaces:
+  - "cert-manager-operator"
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-cert-manager-operator
+  namespace: cert-manager-operator
+spec:
+  channel: stable-v1
+  name: openshift-cert-manager-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
+  startingCSV: cert-manager-operator.v1.13.0
+EOF
+
+cat << EOF > cert-manager-patch.yaml
+spec:
+  controllerConfig:
+    overrideArgs:
+      - '--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53'
+      - '--dns01-recursive-nameservers-only'
+EOF
+
+cat << EOF > ocp-cert-manager-issuers.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: cert-manager
+spec:
+  acme:
+    email: ccrow@purestorage.com
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging-issuer-account-key
+    solvers:
+    - dns01:
+        cloudDNS:
+          # The ID of the GCP project
+          project: ${INSTRUQT_GCP_PROJECT_GCPPROJECT_PROJECT_ID}
+          hostedZoneName: ocp
+          # This is the secret used to access the service account
+          serviceAccountSecretRef:
+            name: clouddns-dns01-solver-svc-acct
+            key: key.json
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    email: ccrow@purestorage.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-issuer-account-key
+    solvers:
+    - dns01:
+        cloudDNS:
+          # The ID of the GCP project
+          project: ${INSTRUQT_GCP_PROJECT_GCPPROJECT_PROJECT_ID}
+          hostedZoneName: ocp          
+          # This is the secret used to access the service account
+          serviceAccountSecretRef:
+            name: clouddns-dns01-solver-svc-acct
+            key: key.json
+EOF
+
+
+  # Set openshift VARS
+export DOMAIN="${OCP_DNS_ZONE}"
+export CLUSTER_NAME="ocp.${OCP_DNS_ZONE}"
+cat <<EOF > ocp-cert-manager-certs.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: router-certs-letsencrypt
+  namespace: openshift-ingress
+  labels:
+    app: cert-manager
+spec:
+  secretName: router-certs-letsencrypt
+  secretTemplate:
+    labels:
+      app: cert-manager
+  duration: 2160h # 90d
+  renewBefore: 720h # 30d
+  subject:
+    organizations:
+      - Org Name
+  commonName: '*.${DOMAIN}'
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - '*.${DOMAIN}'
+    - '*.apps.${CLUSTER_NAME}'
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-certs-letsencrypt
+  namespace: openshift-config
+  labels:
+    app: cert-manager
+spec:
+  secretName: api-certs-letsencrypt
+  secretTemplate:
+    labels:
+      app: cert-manager
+  duration: 2160h # 90d
+  renewBefore: 720h # 30d
+  subject:
+    organizations:
+      - Org Name
+  commonName: 'api.${CLUSTER_NAME}'
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - 'api.${CLUSTER_NAME}'
+    - 'api.${DOMAIN}'
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+EOF
+
+
+}
+
+
+#################################################################
+# Main Script block
+
+# Logging
+debug "region = ${region}"
+debug "zones = ${zones[@]}"
+
+### Required starting functions
+meta_write_files
+
+# Ensures the environment is ready
+wait_ready_bootstrap
+
+# Install required utilities 
+install_utilities
+
+# IMPORTANT TESTING SECTION
+# For TSCC to work, we need to format the below functions as ##<track> with no space.
+# TSCC will uncomment the appropriate function and run them.
+# The only part of the testing tracks that will be updated is this script and these lines
+# in the setu-p-cloud-client, so 
+# step 01 can be used to run track specific tests later on
+
+# UPDATE: This section is also used for the dpxd project.
+
+##meta_gke_portworx_install
+##meta_gke_pxbackup_install
+meta_gcp_ocp_install
+##meta_gke_cluster_install
+##meta_gke_pxbackup_base
+##meta_gcp_rancher_install
+##meta_gke_portworx_dr_install
+##meta_gke_portworx_clouddrives
+##meta_gke_kubecon2024
+##meta_gcp_ocp_pxe
+##meta_gcp_ocp_pxb
+##meta_gcp_rancher_base
+
+
+# These functions should be run on ALL SCRIPTS! If we find an exception, they need to be moved to the appropriate meta function
+nginx_config
+collect_config
+customize_bash
+# Writes the BASHRC array to .bashrc
+write_bashrc
+
+exit 0
+
+

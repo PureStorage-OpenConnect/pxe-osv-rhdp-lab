@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# we will touch a file that will bypass a later check
+
+touch /tmp/02-solved
+
+

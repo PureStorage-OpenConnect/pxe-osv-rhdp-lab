@@ -1,0 +1,58 @@
+#!/bin/bash
+source /root/.bashrc
+
+# Let's make sure the user ran the cleanup script
+if [[ $(cat /tmp/cleanup_check) != 1 ]]; then
+    fail-message "No check can complete until the cleanup script is run. Please run the cleanup script before clicking the 'Check' button."
+    exit 1
+fi
+
+
+set -x
+LB_UI_IP=$(kubectl get svc -n central px-backup-ui -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+LB_SERVER_IP=$(kubectl get svc -n central px-backup -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+client_secret=$(kubectl get secret --namespace central pxc-backup-secret -o jsonpath={.data.OIDC_CLIENT_SECRET} | base64 --decode)
+until [[ $return_value == 0 ]]; do
+    pxbackupctl login -s http://$LB_UI_IP -u admin -p admin
+    return_value=$?
+    echo "Waiting for successful login"
+    sleep 5
+done
+
+# Is px-backup running?
+if [[ $(kubectl get pods -n central -l app=px-backup -o jsonpath='{.items[0].status.phase}') != "Running" ]]; then
+    fail-message "PX-Backup is not running"
+    exit 1
+fi
+
+if [[ $(pxbackupctl get cluster -e $LB_SERVER_IP:10002 -o json | jq -cr '.[0].clusterinfo.status.status') != 1 ]]; then
+    fail-message "Kubernetes cluster not added"
+    exit 1
+fi
+
+
+if [[ $(pxbackupctl get backuplocation -e $LB_SERVER_IP:10002 -o json | jq length) != 2 ]]; then
+    fail-message "I don't see 2 backup targets"
+    echo $(pxbackupctl get backuplocation -e $LB_SERVER_IP:10002 -o json)
+    exit 1
+fi
+
+
+if [[ $(pxbackupctl get schedulepolicy  -e $LB_SERVER_IP:10002 -o json | jq length) != 2 ]]; then
+    fail-message "I don't see 2 backup schedules"
+    exit 1
+fi
+
+if [[ ! -e "/var/www/html/pxbackup.html" ]]; then
+    fail-message "Looks like config-proxy.sh was not run"
+    exit 1
+fi
+
+if [[ $(pxbackupctl get rule -e $LB_SERVER_IP:10002 -o json | jq length) != 2 ]]; then
+    fail-message "I don't see 2 backup rules"
+    echo $(pxbackupctl get rule -e $LB_SERVER_IP:10002 -o json)
+    exit 1
+fi
+
+
+exit 0

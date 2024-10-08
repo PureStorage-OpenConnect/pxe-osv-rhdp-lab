@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+
+source /root/.profile
+
+oc project default
+
+cat << EOF > autopilotrule.yaml
+apiVersion: autopilot.libopenstorage.org/v1alpha1
+kind: AutopilotRule
+metadata:
+ name: volume-resize
+spec:
+  ##### selector filters the objects affected by this rule given labels
+  selector:
+    matchLabels:
+      app: autopilot
+  ##### conditions are the symptoms to evaluate. All conditions are AND'ed
+  conditions:
+    # volume usage should be less than 30%
+    expressions:
+    - key: "100 * (px_volume_usage_bytes / px_volume_capacity_bytes)"
+      operator: Gt
+      values:
+        - "30"
+    for: 5
+  ##### action to perform when condition is true
+  actions:
+  - name: openstorage.io.action.volume/resize
+    params:
+      # resize volume by scalepercentage of current size
+      scalepercentage: "100"
+      # volume capacity should not exceed 5GiB
+      maxsize: "5Gi"
+EOF
+
+if [[ ! -e /usr/local/bin/virtctl ]]; then
+    wget https://hyperconverged-cluster-cli-download-openshift-cnv.apps.ocp.${OCP_DNS_ZONE}/amd64/linux/virtctl.tar.gz
+    tar -xvf virtctl.tar.gz
+    chmod +x virtctl
+    mv virtctl /usr/local/bin
+fi
+
+cat << EOF | oc apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: portworx-rwx-kubevirt
+provisioner: pxd.portworx.com
+parameters:
+  repl: "3"
+  sharedv4: "true"
+  sharedv4_mount_options: vers=3.0,nolock
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+EOF
+
+cat << EOF > osv-autopilot-vm.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authorized-keys
+data:
+  key: $(cat ~/.ssh/id_rsa.pub | base64 -w0)
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  creationTimestamp: null
+  name: centos-stream9-autopilot
+spec:
+  dataVolumeTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: centos-stream9-autopilot-ds-centos-stream9
+      annotations:
+        cdi.kubevirt.io/storage.usePopulator: "false"
+    spec:
+      sourceRef:
+        kind: DataSource
+        name: centos-stream9
+        namespace: openshift-virtualization-os-images
+      storage:
+        storageClassName: portworx-rwx-kubevirt
+        resources: {}
+  - metadata:
+      creationTimestamp: null
+      name: centos-stream9-autopilot-data-disk
+      annotations:
+        cdi.kubevirt.io/storage.usePopulator: "false"
+      labels:
+        app: autopilot
+    spec:
+      preallocation: false
+      source:
+        blank: {}
+      storage:
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: portworx-rwx-kubevirt
+  instancetype:
+    name: u1.medium
+  preference:
+    name: centos.stream9
+  runStrategy: Always
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      domain:
+        devices: {}
+        resources: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - dataVolume:
+          name: centos-stream9-autopilot-ds-centos-stream9
+        name: centos-stream9-autopilot-ds-centos-stream9
+      - cloudInitNoCloud: 
+          userData: |-
+            #cloud-config
+            user: cloud-user
+        name: cloudinitdisk
+      - dataVolume:
+          name: centos-stream9-autopilot-data-disk
+        name: centos-stream9-autopilot-data-disk
+      accessCredentials:
+        - sshPublicKey:
+            propagationMethod:
+              noCloud: {}
+            source:
+              secret:
+                secretName: authorized-keys 
+EOF
+
+oc apply -f osv-autopilot-vm.yaml
+sleep 30
+# Wait for the VM to boot
+
+until virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c 'lsblk'; do
+    echo "waiting for VM to boot"
+    sleep 10
+done
+
+virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdc && sudo mkfs.ext4 /dev/vdc1 && sudo mkdir /data && sudo mount /dev/vdc1 /data'
+
+cat << 'EOF' > extend_filesystem.sh
+#!/bin/bash
+
+source /root/.profile
+#Make sure we have a data disk for the AP VM
+until [[ `oc get pvc centos-stream9-autopilot-data-disk --no-headers -o=custom-columns=:.spec.volumeName | wc -l` -eq 1 ]];do
+  sleep 1
+done
+
+echo "Autopilot data disk found"
+
+#Get the volume name of the AP VM data disk
+VM_DATA_DISK=$(oc get pvc centos-stream9-autopilot-data-disk --no-headers -o=custom-columns=:.spec.volumeName)
+
+until [[ `oc get events --field-selector  involvedObject.kind=AutopilotRule,involvedObject.name=volume-resize  --all-namespaces --sort-by .lastTimestamp -o custom-columns=MESSAGE:.message | grep -e "$VM_DATA_DISK transition from ActiveActionsInProgress => ActiveActionsTaken" | wc -l` -eq 1 ]]; do
+  sleep 2
+done
+
+echo "Autopilot expansion event found"
+
+#Check for the detection of /dev/vdc having a new size
+until [[ `virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c 'sudo journalctl | grep -e "vdc: detected capacity change"' | wc -l` -eq 1 ]]; do
+  sleep 5
+done
+
+echo "Data disk capacity change found within the VM"
+
+#Extend the partition and filesystem
+virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c 'yes Fix | sudo parted --script --fix /dev/vdc print ; yes | sudo parted ---pretend-input-tty /dev/vdc resizepart 1 100% ; sudo resize2fs /dev/vdc1'
+
+echo "Partition and filesystem for data disk extended"
+EOF
+
+chmod 777 extend_filesystem.sh
+
+
+cat << 'EOF' > /root/.bash_profile
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+(/root/extend_filesystem.sh > /dev/null 2>&1 &)
+EOF

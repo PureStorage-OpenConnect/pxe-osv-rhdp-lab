@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+
+source .bashrc
+
+## TSCC Compat global variables
+MINIO_VERSION="5.2.0"
+MINIO_SC="px-csi-db"
+PXBACKUP_VERSION="2.7.1"
+PXBACKUP_SC="px-csi-db"
+WAIT_READY_TIMEOUT=50
+## TSCC Script Compat Section
+try () {
+    eval "$@"
+}
+log () {
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+}
+logv2 () {
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+}
+debug () {
+  if [[ ${DEBUG} == 1 ]]; then
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+  fi
+}
+
+wait_ready_pxbackup_loadbalancer () {
+  declare -i timer=0
+  logv2 "Waiting for px-backup loadbalancer to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  ip_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+  until [[ $(kubectl -n central get svc px-backup -o json | jq -cr '.status.loadBalancer.ingress[0].ip') =~ $ip_regex ]]; do     echo -n "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+wait_ready_pxbackup () {
+  declare -i timer=0
+  logv2 "Waiting for px-backup to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ $(kubectl get po --namespace central --no-headers -ljob-name=pxcentral-post-install-hook  -o json | jq -rc '.items[0].status.phase') == "Succeeded" ]]; do
+      echo "Waiting for post-install hook to succeed..."
+      sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+}
+
+  try "helm repo add portworx http://charts.portworx.io/ && helm repo update"
+  try "helm install px-central portworx/px-central --namespace central --create-namespace --version ${PXBACKUP_VERSION} --set persistentStorage.enabled=true,persistentStorage.storageClassName=\"${PXBACKUP_SC}\",pxbackup.enabled=true,oidc.centralOIDC.updateAdminProfile=false"
+
+wait_ready_pxbackup
+
+# Configure Proxy
+/root/config-proxy.sh
+
+/root/cleanup.sh
+
+################ Configure PX Backup ################
+# First, let's get what we need configured to run pxbackupctl commands:
+kubectl patch svc px-backup -n central --type='json' -p '[{"op":"replace","path":"/spec/type","value":"LoadBalancer"}]'
+
+
+BACKUP_POD_NAME=$(kubectl get pods -n central -l app=px-backup -o jsonpath='{.items[0].metadata.name}')
+kubectl cp -n central $BACKUP_POD_NAME:pxbackupctl/linux/pxbackupctl /usr/bin/pxbackupctl --retries=10
+chmod +x /usr/bin/pxbackupctl
+
+
+# Now set some helpful environment variables
+LB_UI_IP=$(kubectl get svc -n central px-backup-ui -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+LB_SERVER_IP=$(kubectl get svc -n central px-backup -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+client_secret=$(kubectl get secret --namespace central pxc-backup-secret -o jsonpath={.data.OIDC_CLIENT_SECRET} | base64 --decode)
+
+# And login to px backup
+until [[ $return_value == 0 ]]; do
+    pxbackupctl login -s http://$LB_UI_IP -u admin -p admin
+    return_value=$?
+    echo "Waiting for successful login"
+    sleep 5
+done
+
+kubectl config view --flatten --minify > /root/pxbackup-kubeconfig.yaml
+
+
+# Next, let's create the backup locations and the minio cloud credentials
+# Now this sucks, but the -n flag doesn't work, so we are going to use an index number. This creates a potential logic issue if the student half-finishes the lab
+pxbackupctl create cloudcredential --name s3-account -p aws -e $LB_SERVER_IP:10002 --aws-access-key $MINIO_ACCESS_KEY --aws-secret-key $MINIO_SECRET_KEY
+cloud_credential_uid=$(pxbackupctl get cloudcredential -e $LB_SERVER_IP:10002 --orgID default -o json | jq -cr '.[0].metadata.uid') 
+
+pxbackupctl create backuplocation -e $LB_SERVER_IP:10002 --cloud-credential-Uid $cloud_credential_uid --name backup-location-1 -p s3 --cloud-credential-name s3-account --path $BUCKETNAME --s3-endpoint ${MINIO_ENDPOINT} --s3-region us-central-1 --s3-disable-pathstyle=true --s3-disable-ssl=true
+pxbackupctl create backuplocation -e $LB_SERVER_IP:10002 --cloud-credential-Uid $cloud_credential_uid --name obj-lock-backup-location-1 -p s3 --cloud-credential-name s3-account --path $BUCKETNAME_OBJECTLOCK --s3-endpoint ${MINIO_ENDPOINT} --s3-region us-central-1 --s3-disable-pathstyle=true --s3-disable-ssl=true
+
+
+# It seems to take this long for nfs to validate, even though the command is successful
+sleep 45 
+
+
+# And create our schedule policies
+pxbackupctl create schedulepolicy --interval-minutes 15 -e $LB_SERVER_IP:10002 --name 15-min
+pxbackupctl create schedulepolicy --interval-minutes 15 -e $LB_SERVER_IP:10002 --name 15-min-object --forObjectLock
+
+#### Create rule definition for solve script
+cat << EOF > /root/mongo-pre-rule.yaml
+    rules:
+    - actions:
+      - value: 'mongosh -u porxie -p porxie --eval "db.adminCommand( { fsync: 1 }
+          )"'
+      podSelector:
+          app.kubernetes.io/name: mongo
+EOF
+cat << EOF > /root/mongo-post-rule.yaml
+    rules:
+    - actions:
+        - value: mongodump -u porxie -p porxie
+      podSelector:
+          app.kubernetes.io/name: mongo
+EOF
+
+pxbackupctl create rule -e $LB_SERVER_IP:10002 -f mongo-pre-rule.yaml --name mongo-pre
+pxbackupctl create rule -e $LB_SERVER_IP:10002 -f mongo-post-rule.yaml --name mongo-post
+
+# Now, let's create the GKE Account and add the cluster
+pxbackupctl create cloudcredential --name gcp-account -p google --google-json-key /root/.config/gcloud/credentials -e $LB_SERVER_IP:10002
+cloud_credential_uid=$(pxbackupctl get cloudcredential -e $LB_SERVER_IP:10002 --orgID default -o json | jq -cr '.[1].metadata.uid') 
+pxbackupctl create cluster --name instruqt-px -k /root/pxbackup-kubeconfig.yaml -e $LB_SERVER_IP:10002 --cloud-credential-uid $cloud_credential_uid --cloud-credential-name gcp-account --orgID default
+
+
+
+exit 0

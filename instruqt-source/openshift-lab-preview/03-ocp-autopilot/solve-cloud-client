@@ -1,0 +1,8 @@
+#!/bin/bash
+
+
+# Adding cleanup scripts to the check script in case folks skip the wrap up section
+/root/cleanup.sh
+
+
+exit 0

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Ensure Portworx is Running
+
+if [[ $(kubectl -n portworx get stc -o jsonpath='{.items[0].status.phase}' 2> /dev/null) != "Running" ]]; then
+  echo "Portworx is not running"
+  fail-message "Portworx is not running"
+fi
+
+exit 0

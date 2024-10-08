@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+source ~/.bashrc
+
+if [[ ! -e /usr/local/bin/virtctl ]]; then
+    wget https://hyperconverged-cluster-cli-download-openshift-cnv.apps.ocp.${OCP_DNS_ZONE}/amd64/linux/virtctl.tar.gz
+    tar -xvf virtctl.tar.gz
+    chmod +x virtctl
+    mv virtctl /usr/local/bin
+fi
+
+ID_RSA_PUB=$(cat ~/.ssh/id_rsa.pub)
+cat << EOF > osv-example-vm.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authorized-keys
+data:
+  key: $(cat ~/.ssh/id_rsa.pub | base64 -w0)
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  creationTimestamp: null
+  name: centos-stream9-example
+spec:
+  dataVolumeTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: centos-stream9-example-ds-centos-stream9
+    spec:
+      sourceRef:
+        kind: DataSource
+        name: centos-stream9
+        namespace: openshift-virtualization-os-images
+      storage:
+        resources: {}
+  instancetype:
+    name: u1.medium
+  preference:
+    name: centos.stream9
+  runStrategy: Always
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      domain:
+        devices: {}
+        resources: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - dataVolume:
+          name: centos-stream9-example-ds-centos-stream9
+        name: centos-stream9-example-ds-centos-stream9
+      - cloudInitNoCloud: 
+          userData: |-
+            #cloud-config
+            user: cloud-user
+        name: cloudinitdisk
+      accessCredentials:
+        - sshPublicKey:
+            propagationMethod:
+              noCloud: {}
+            source:
+              secret:
+                secretName: authorized-keys 
+EOF
+
+# I don't think we need an additional VM here
+#oc apply -f osv-example-vm.yaml
+
+oc project default

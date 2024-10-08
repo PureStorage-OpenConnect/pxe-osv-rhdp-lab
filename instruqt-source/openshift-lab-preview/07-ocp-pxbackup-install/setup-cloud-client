@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+
+
+source .bashrc
+
+## TSCC Compat global variables
+MINIO_VERSION="5.2.0"
+MINIO_SC="px-csi-db"
+PXBACKUP_VERSION="2.7.1"
+PXBACKUP_SC="px-csi-db"
+WAIT_READY_TIMEOUT=50
+## TSCC Script Compat Section
+try () {
+    eval "$@"
+}
+log () {
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+}
+logv2 () {
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+}
+debug () {
+  if [[ ${DEBUG} == 1 ]]; then
+    echo $(date -u +"%Y-%m-%dT%H:%M:%SZ") "${@}"
+  fi
+}
+add_bashrc () {
+    echo "$@" >> .bashrc
+    agent variable set $(echo "${@}" | awk -F '[ =]' '{print $2 " " $3}')
+}
+
+### TSCC Functions
+wait_ready_minio () {
+  declare -i timer=0
+  logv2 "Waiting for Minio to be ready"
+  if [[ $SIMULATE == 1 ]]; then log "Simulating, ${FUNCNAME[0]}";return 0; fi
+  until [[ $(kubectl -n px-minio get deployments.apps px-minio -o json | jq -r '.status.readyReplicas') -le 2 ]]; do
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+  declare -i timer=0
+  logv2 "Waiting for Minio IP to be ready"
+  ip_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+  until [[ $(kubectl -n px-minio get svc px-minio -o json | jq -cr '.status.loadBalancer.ingress[0].ip') =~ $ip_regex ]]; do 
+    echo "."
+    sleep 10
+    if [[ $timer -gt $WAIT_READY_TIMEOUT ]]; then
+      log "Timeout waiting for ${FUNCNAME[0]}"
+      break
+    fi
+    debug "timer value: ${timer}"
+    timer+=1
+  done
+  sleep 10
+}
+
+minio_install () {
+    ### NOTE: This has been modified from the TSCC Script
+      helm repo add minio https://charts.min.io/ && helm repo update
+
+  try "helm install px-minio \
+      --set mode=standalone \
+      --set persistence.storageClass=${MINIO_SC} \
+      --set persistence.size=10Gi \
+      --set resources.requests.memory=1Gi \
+      --set service.type=LoadBalancer \
+      --namespace px-minio \
+      --version ${MINIO_VERSION} \
+      minio/minio"&
+
+sleep 2
+oc adm policy add-scc-to-user anyuid -z minio-sa -n px-minio
+}
+minio_config () {
+  MINIO_ENDPOINT=http://$(kubectl get svc -n px-minio px-minio -o jsonpath='{.status.loadBalancer.ingress[].ip}'):9000
+  MINIO_ACCESS_KEY=$(kubectl get secret -n px-minio px-minio -o jsonpath="{.data.rootUser}" | base64 --decode)
+  MINIO_SECRET_KEY=$(kubectl get secret -n px-minio px-minio -o jsonpath="{.data.rootPassword}" | base64 --decode)
+  BUCKETNAME=instruqt-$(date +%s)
+  BUCKETNAME_OBJECTLOCK=instruqt-$(date +%s)-objectlock
+
+  try "mc alias set px $MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY"
+
+  try "mc mb px/$BUCKETNAME"
+  try "mc mb px/$BUCKETNAME_OBJECTLOCK --with-lock"
+  try "mc retention set --default COMPLIANCE 7d px/${BUCKETNAME_OBJECTLOCK}"
+
+  add_bashrc "export MINIO_ENDPOINT=${MINIO_ENDPOINT}"
+  add_bashrc "export MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}"
+  add_bashrc "export MINIO_SECRET_KEY=${MINIO_SECRET_KEY}"
+  add_bashrc "export BUCKETNAME=${BUCKETNAME}"
+  add_bashrc "export BUCKETNAME_OBJECTLOCK=${BUCKETNAME_OBJECTLOCK}"
+}
+
+## TSCC Execute Block
+oc create ns px-minio
+
+minio_install
+
+wait_ready_minio
+
+minio_config
+
+
+
+### File Heredocs
+
+cat << "_EOF" > /root/config-proxy.sh
+export LB_UI_IP=$(kubectl get svc -n central px-backup-ui -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+
+cat << EOF > /var/www/html/pxbackup.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PX Backup Link</title>
+</head>
+<body>
+    <a href="http://${LB_UI_IP}" target="_blank" rel="noopener noreferrer">PX Backup Web Console</a>
+</body>
+</html>
+EOF
+echo "Proxy configuration complete"
+echo "You may now access the PX Backup UI from the PX-Backup tab"
+_EOF
+chmod +x /root/config-proxy.sh
+
+## 
+cat << EOF > /root/get-info.sh
+#!/bin/bash
+
+echo "#### Connection Info for this lab ####"
+echo "Minio Endpoint: ${MINIO_ENDPOINT}" | sed 's#http://##'
+echo "Minio Access Key: ${MINIO_ACCESS_KEY}"
+echo "Minio Secret Key: ${MINIO_SECRET_KEY}"
+echo "Bucket Name: ${BUCKETNAME}"
+echo "Object Lock Bucket Name: ${BUCKETNAME_OBJECTLOCK}"
+EOF
+chmod +x /root/get-info.sh
+echo "/root/get-info.sh" >> /root/.bashrc
+
+cat << "EOF" > /root/cleanup.sh
+#!/bin/bash
+source /root/.bashrc
+################ Configure PX Backup ################
+echo "#### Configuring PX Backup API for Checks"
+# First, let's get what we need configured to run pxbackupctl commands:
+kubectl patch svc px-backup -n central --type='json' -p '[{"op":"replace","path":"/spec/type","value":"LoadBalancer"}]'
+# Set the nodeport to 30000 so it is compatible with nginx
+# No reason to do this as I can't seem to get this to work behind a reverse proxy
+# kubectl patch svc px-backup-ui -n central --type='json' -p '[{"op":"replace","path":"/spec/ports/0/nodePort","value":30000}]'
+echo "Waiting for LoadBalancer IP to be assigned"
+
+ip_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+until [[ $(kubectl -n central get svc px-backup -o json | jq -cr '.status.loadBalancer.ingress[0].ip') =~ $ip_regex ]]; do 
+  # do nothing!
+  sleep 5
+done
+BACKUP_POD_NAME=$(kubectl get pods -n central -l app=px-backup -o jsonpath='{.items[0].metadata.name}')
+kubectl cp -n central $BACKUP_POD_NAME:pxbackupctl/linux/pxbackupctl /usr/bin/pxbackupctl --retries=10
+chmod +x /usr/bin/pxbackupctl
+sleep 10
+clear
+echo "Cleanup complete - please click the \"Check\" button to move onto the next section"
+echo "1" > /tmp/cleanup_check
+
+EOF
+chmod +x /root/cleanup.sh
+
+
+### Let's deploy PXBBQ in case we haven't done that before:
+kubectl create ns pxbbq
+kubectl apply -f pxbbq-mongo.yaml
+kubectl apply -f pxbbq-web.yaml
+oc adm policy add-scc-to-user anyuid -z default -n pxbbq
+
+oc expose svc -n pxbbq pxbbq-svc
+oc -n pxbbq patch route pxbbq-svc \
+  -p '{"spec":{"tls":{"termination":"edge"}}}'

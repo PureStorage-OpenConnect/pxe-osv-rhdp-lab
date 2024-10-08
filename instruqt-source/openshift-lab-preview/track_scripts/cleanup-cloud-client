@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -x 
+source ~/.bashrc
+
+OCP_INSTALL_DIR="/root/ocp-install"
+# This script is hacky at best
+
+# Remove the Portworx license
+kubectl config use-context cluster1
+alias pxctl="PX_POD=$(kubectl get pods -l name=portworx -n portworx -o jsonpath='{.items[0].metadata.name}') && kubectl exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl"
+declare -i i=0
+until [[ $i -ge 3 ]]
+do
+    pxctl license activate --ep UAT -n 0 ${PXENT_LICENSE}
+    if [[ $? -eq 0 ]]; then
+        break
+    fi
+    sleep 10
+    i=$i+1
+done
+
+kubectl config use-context cluster2
+alias pxctl="PX_POD=$(kubectl get pods -l name=portworx -n portworx -o jsonpath='{.items[0].metadata.name}') && kubectl exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl"
+declare -i i=0
+until [[ $i -ge 3 ]]
+do
+    pxctl license activate --ep UAT -n 0 ${PXENT_LICENSE}
+    if [[ $? -eq 0 ]]; then
+        break
+    fi
+    sleep 10
+    i=$i+1
+done
+
+# Remove AWS NS record
+aws configure set aws_access_key_id ${CCROW_ROUTE53_ACCESSKEY}
+aws configure set aws_secret_access_key ${CCROW_ROUTE53_SECRETKEY}
+aws configure set default.region "us-west-2"
+aws configure set default.output "json"
+RANCHER_DNS_NAME="rancher-${INSTRUQT_PARTICIPANT_ID}.instruqt.pxbbq.com"
+OCP_DNS_ZONE="${INSTRUQT_PARTICIPANT_ID}.instruqt.pxbbq.com"
+AWS_DNS_ZONE_ID="Z00903771OQIK90QR7LAA"
+sleep 10
+# The file should already exist, let's change it to a delete record:
+jq '.Changes[].Action = "DELETE"' change-resource-record-sets.json > updated-change-resource-record-sets.json
+jq '.Changes[].Action = "DELETE"' change-resource-record-sets-rancher.json > updated-change-resource-record-sets-rancher.json
+
+cat updated-change-resource-record-sets.json
+cat updated-change-resource-record-sets-rancher.json
+aws route53 change-resource-record-sets --hosted-zone-id $AWS_DNS_ZONE_ID --change-batch file://updated-change-resource-record-sets.json
+aws route53 change-resource-record-sets --hosted-zone-id $AWS_DNS_ZONE_ID --change-batch file://updated-change-resource-record-sets-rancher.json
+
+
+sleep 10
+
+gcloud compute firewall-rules delete allow-all-ports --quiet
+
+
+/root/openshift-install --dir=${OCP_INSTALL_DIR} destroy cluster

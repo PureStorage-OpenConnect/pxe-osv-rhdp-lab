@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -x
+
+if [ -f "/tmp/02-solved" ]; then
+    echo "02-solved, skipping"
+    exit 0
+fi
+
+# now on to the user checks
+
+LB_UI_IP=$(kubectl get svc -n central px-backup-ui -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+LB_SERVER_IP=$(kubectl get svc -n central px-backup -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+client_secret=$(kubectl get secret --namespace central pxc-backup-secret -o jsonpath={.data.OIDC_CLIENT_SECRET} | base64 --decode)
+until [[ $return_value == 0 ]]; do
+    pxbackupctl login -s http://$LB_UI_IP -u admin -p admin
+    return_value=$?
+    echo "Waiting for successful login"
+    sleep 5
+done
+
+
+if [[ $(pxbackupctl get backup -e $LB_SERVER_IP:10002 -o json | jq '.[0].backup_info.status.status') != 6 ]]; then
+    fail-message "I don't see a backup"
+    echo $(pxbackupctl get backup -e $LB_SERVER_IP:10002 -o json)
+    exit 1
+fi
+
+if [[ $(pxbackupctl get restore -e $LB_SERVER_IP:10002 -o json | jq '.[0].restore_info.status.status') != 6 ]]; then
+    fail-message "I don't see a restore"
+    echo $(pxbackupctl get restore -e $LB_SERVER_IP:10002 -o json)
+    exit 1
+fi

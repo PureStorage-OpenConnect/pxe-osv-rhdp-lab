@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+echo "This is the cleanup script"
+
+exit 0
