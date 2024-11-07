@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+kubectl delete -f osv-autopilot-vm.yaml
+rm -rf /root/.bash_profile

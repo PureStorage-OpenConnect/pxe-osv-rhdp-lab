@@ -1,0 +1,28 @@
+# Basic info for the challenge
+declare -A CHALLENGE_INFO=( \
+    ["meta_func"]="meta_gcp_ocp_install"\
+    ["desc"]="Openshift Virtualization - Snapshots"\
+    ["testing_status"]="Untested"\
+)
+# What tracks does this challenge depend on and should be added
+
+# Example of a blank array:
+declare -a CHALLENGE_DEPEND=(\
+    "ocp-pxe-install" \
+)
+# Peforms sed substitutions on these lines in the setup script
+# It is VERY important to understand that this does a cemplete line substitution with sed
+# It will anchor to the start of the line and replace the ENTIRE line with the secord value
+declare -a CHALLENGE_SUBS=(\
+    "feature_DUMMY feature_DUMMY=true" \
+    "feature_AWS feature_AWS=true" \
+    "feature_OCP feature_OCP=true" \
+)
+declare -a CHALLENGE_ASSETS=(\ 
+    "osv/snapshot-vm-01.png" \
+    "osv/snapshot-vm-02.png" \
+    "osv/snapshot-vm-03.png" \
+    "osv/snapshot-vm-04.png" \
+    "osv/snapshot-vm-05.png" \
+    "osv/snapshot-vm-06.png" \
+)

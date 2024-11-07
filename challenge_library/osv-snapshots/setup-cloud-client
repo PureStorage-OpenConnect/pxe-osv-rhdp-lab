@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+cat << EOF > autopilotrule.yaml
+apiVersion: autopilot.libopenstorage.org/v1alpha1
+kind: AutopilotRule
+metadata:
+ name: volume-resize
+spec:
+  ##### selector filters the objects affected by this rule given labels
+  selector:
+    matchLabels:
+      app: autopilot
+  ##### conditions are the symptoms to evaluate. All conditions are AND'ed
+  conditions:
+    # volume usage should be less than 30%
+    expressions:
+    - key: "100 * (px_volume_usage_bytes / px_volume_capacity_bytes)"
+      operator: Gt
+      values:
+        - "30"
+    for: 5
+  ##### action to perform when condition is true
+  actions:
+  - name: openstorage.io.action.volume/resize
+    params:
+      # resize volume by scalepercentage of current size
+      scalepercentage: "50"
+      # volume capacity should not exceed 20GiB
+      maxsize: "80Gi"
+EOF
+
+if [[ ! -e /usr/local/bin/virtctl ]]; then
+    wget https://hyperconverged-cluster-cli-download-openshift-cnv.apps.ocp.${OCP_DNS_ZONE}/amd64/linux/virtctl.tar.gz
+    tar -xvf virtctl.tar.gz
+    chmod +x virtctl
+    mv virtctl /usr/local/bin
+fi
+
+
+cat << EOF > osv-snapshot-vm.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authorized-keys
+data:
+  key: $(cat ~/.ssh/id_rsa.pub | base64 -w0)
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  creationTimestamp: null
+  name: centos-stream9-snapshot
+spec:
+  dataVolumeTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: centos-stream9-snapshot-ds-centos-stream9
+    spec:
+      sourceRef:
+        kind: DataSource
+        name: centos-stream9
+        namespace: openshift-virtualization-os-images
+      storage:
+        resources: {}
+  instancetype:
+    name: u1.medium
+  preference:
+    name: centos.stream9
+  runStrategy: Always
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      domain:
+        devices: {}
+        resources: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - dataVolume:
+          name: centos-stream9-snapshot-ds-centos-stream9
+        name: centos-stream9-snapshot-ds-centos-stream9
+      - cloudInitNoCloud: 
+          userData: |-
+            #cloud-config
+            user: cloud-user
+        name: cloudinitdisk
+      accessCredentials:
+        - sshPublicKey:
+            propagationMethod:
+              noCloud: {}
+            source:
+              secret:
+                secretName: authorized-keys 
+EOF
+
+oc apply -f osv-snapshot-vm.yaml
+
