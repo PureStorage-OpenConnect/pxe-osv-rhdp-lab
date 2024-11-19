@@ -1,0 +1,26 @@
+title: "Portworx role"
+description: "Portworx role for managed disks"
+stage: "GA"
+includedPermissions:
+- compute.disks.addResourcePolicies
+- compute.disks.create
+- compute.disks.createSnapshot
+- compute.disks.delete
+- compute.disks.get
+- compute.disks.getIamPolicy
+- compute.disks.list
+- compute.disks.removeResourcePolicies
+- compute.disks.resize
+- compute.disks.setIamPolicy
+- compute.disks.setLabels
+- compute.disks.update
+- compute.disks.use
+- compute.disks.useReadOnly
+- compute.instances.attachDisk
+- compute.instances.detachDisk
+- compute.instances.get
+- compute.nodeGroups.get
+- compute.nodeGroups.getIamPolicy
+- compute.nodeGroups.list
+- compute.zoneOperations.get
+- container.clusters.get

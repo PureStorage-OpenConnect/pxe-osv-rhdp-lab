@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: portworx-operator
+  namespace: portworx 
+spec:
+  channel: stable 
+  name: portworx-certified
+  source: certified-operators 
+  sourceNamespace: openshift-marketplace 
+  startingCSV: "portworx-operator.v24.1.1"

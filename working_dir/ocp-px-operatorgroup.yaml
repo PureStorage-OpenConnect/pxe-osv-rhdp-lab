@@ -1,0 +1,8 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: portworx-certified
+  namespace: portworx
+spec:
+  targetNamespaces:
+  - portworx
