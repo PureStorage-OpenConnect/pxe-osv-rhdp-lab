@@ -79,41 +79,6 @@ Explore the tabs for this virtual machine. We can view metrics, configure snapsh
 > [!IMPORTANT]
 > The Virtual Machine name will be different in your environment
 
-Step 2 - Test Live Migrations
-=====
-
-In order for live migrations to be supported, OpenShift VirtualMachines need to use a PVC with a ReadWriteMany access mode. We can verify this by running:
-
-```bash,run
-oc get pvc
-```
-
-### Task 1: Live Migrate a VM
-
-Back in the OpenShift Console, click on the `Overview` tab and take note of the node that our VM is running on.
-
-![get ocp node](../assets/livemigrate-vm-01.png)
-
-We can now migrate the VM to a new node by selecting the `Actions` menu, and then clicking `Migrate`
-
-![migrate vm](../assets/livemigrate-vm-02.png)
-
-After a few moments the interface will update with the new node.
-
-It is important to understand that in OpenShift Virtualization, VirtualMachines run inside pods. This migration spawned a new pod, on the destination node, and then live migrated the VM to that pod. 
-
-We can view the running pods by executing:
-```bash,run
-oc get pods
-```
-
-Notice that one of our pods is in the `Completed` state, this is because our virtual machine process is no longer in that pod!
-
-We can view the running VMs by typing:
-```bash,run
-oc get vms
-```
-
 
 
 
