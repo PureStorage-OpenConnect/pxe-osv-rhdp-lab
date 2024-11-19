@@ -1,0 +1,63 @@
+== Scenario - Persistent Storage Volume Provisioning and Availability for Virtual Machines
+
+In this scenario, we will learn about how to provision a virtual machine
+on OpenShift Virtualization with Purestorage.
+
+=== Reminder: Accessing the Red Hat OpenShift Console
+
+To connect to the console, click on the `OpenShift Console` tab above.
+
+____
+The `OpenShift Console` tab will open in a new browser
+window.
+____
+
+We can then log in with the following credentials:
+
+Username: `kubeadmin` Password:
+`[[ Instruqt-Var key="KUBEADMIN_PASSWORD" hostname="cloud-client" ]]`
+
+== Step 1 - Deploy a Virtual Machine
+
+Start by logging in to the OpenShift console with the information above.
+
+=== Task 1: Create a new VM
+
+Navigate to the virtualzation > overview menu
+
+image:create-vm-01.png[Select VMs]
+
+Click the `Create Virtual Machine` button
+
+image:create-vm-02.png[Click Button]
+
+Select the Centos Stream image. We can also use the default instance
+type.
+
+image:create-vm-03-2.png[Select CentOS]
+
+Verify that our StorageClass is set to `px-csi-db` and click
+`Create VirtualMachine`
+
+image:create-vm-04.png[Select StorageClass]
+
+This will automatically start the virtual machine after a short
+provisioning process.
+
+____
+It can take a couple of minutes for our VM to boot the
+first time
+____
+
+Explore the tabs for this virtual machine. We can view metrics,
+configure snapshots, and even view the YAML configuration to make
+automating easy.
+
+image:create-vm-06.png[Interact with VM]
+
+____
+The Virtual Machine name will be different in your
+environment
+____
+
+Click `Next` to move on to the next challenge

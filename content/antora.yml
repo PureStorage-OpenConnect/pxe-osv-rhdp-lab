@@ -1,12 +1,12 @@
 name: modules
-title: Default Title
+title: Openshift Virtualization and Portworx
 version: master
 nav:
   - modules/ROOT/nav.adoc
 
 asciidoc:
   attributes:
-    lab_name: "I'm the lab_name var"
+    lab_name: "Openshift Virtualization and Portworx"
     release-version: master
     page-pagination: true
     my_var: "foo"
@@ -17,3 +17,5 @@ asciidoc:
     page-links:
     - url: https://redhat.com
       text: Red Hat
+    - url: https://portworx.com
+      text: Portworx
