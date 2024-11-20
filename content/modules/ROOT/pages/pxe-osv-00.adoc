@@ -1,0 +1,140 @@
+== Scenario - Storage Classes and Storage Profiles
+
+In this scerario, we will be creating and configuring both Storage
+Classes, as well as Openshift specific Storage Profiles.
+
+
+=== Creating our project
+
+For this lab, we will be using a new project.
+
+=== Reminder: Accessing the Openshift Console
+
+To connect to the console, click on the tab above.
+
+____
+The `Openshift Console` tab will open in a new browser
+window. Because we are using a self signed certificate, you will need to
+bypass your web browsers security features to connect.
+____
+
+We can then log in with the following credentials:
+
+Username: `kubeadmin` Password:
+`[[ Instruqt-Var key="KUBEADMIN_PASSWORD" hostname="cloud-client" ]]`
+
+== Storage Classes and Storage Profiles in Openshift
+
+A Storage Classes are a kubernetes concept that allows an administrator
+to describe _classes_ of storage they offer. Storage Classes are
+unopinionated about what the class represents, but it may include things
+such as: quality-of-service levels, backup policies, or snapshot
+policies.
+
+Portworx storage classes offer a number of configuration parameters that
+can be used to configure the amount of replicas, or encryption-at-rest
+configurations.
+
+Storage Classes are not specific to Openshift or Virtualization, but we
+still need a storage class to provision virtual machine disks.
+
+=== Task 1: View existing storage classes
+
+Portworx deploys serveral pre-configured storage classes when the
+storage cluster was created. These storage classes offer a veriety of
+configuration options. To view the current storage classes run:
+
+[source,bash,run]
+----
+oc get sc
+----
+
+Portworx offers Kubernetes in-tree and CSI provisioners. Storage Classes
+that contain the `-csi-` string.
+
+Let’s look at the configuration of an example storage class:
+
+[source,sh,role=execute]
+----
+oc get sc px-csi-db -o yaml
+----
+
+
+We can see in the terminal output a list of parameters. This isn’t
+exactly what we want for our new virtual machines, so let’s create a new
+storage class.
+
+=== Task 2: Create a new storage class for VMs
+
+Run the following command to create a new yaml file for the block-based
+StorageClass configuration:
+
+[source,sh,role=execute]
+----
+cat << EOF |oc apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-csi-vm-example
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "true"
+parameters:
+  repl: "3"
+  sharedv4: "true"
+  sharedv4_svc_type: "ClusterIP"
+  sharedv4_mount_options: vers=3.0,nolock
+provisioner: pxd.portworx.com
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+EOF
+----
+
+PVCs provisioned using the above StorageClass will have a replication
+factor of 2, which means there will be two replicas of the PVC spread
+across the Openshift worker nodes.
+
+We have also set some configuration options on how RWX volumes should
+work. We specified the service type to `ClusterIP` which uses a cluster
+IP as the endpoint of NFS, and set some mount options.
+
+We also specified that the volumeBindingMode should be
+`WaitForFirstConsumer` to allow Portworx to intelligently place the
+volume.
+
+See the
+(https://docs.portworx.com/portworx-enterprise/3.1/platform/openshift/ocp-bare-metal/operations/storage-operations/manage-kubevirt-vms)[Portworx
+Documentation] for further details.
+
+Also note that the `provisioner` is set to `pxd.portworx.com`. This
+means that our storage class will be using CSI rather than the in-tree
+provisioner.
+
+With our StorageClass created, we can now create move on to Storage
+Profiles.
+
+=== Task 3: Configure the Storage Profile
+
+Storage Profiles provide recommended storage settings based on an
+associate storage class. Storage profiles are automatically created in
+Openshift when a new storage class is created.
+
+Portworx sets desired parameters when using the CSI provider, including
+the prefered access mode.
+
+We can see the current configuration of our new storage profile by
+running:
+
+[source,bash,run]
+----
+oc get storageprofile px-csi-vm-example -o yaml
+----
+
+We can see under the `.status` node a list of access modes. The first
+access mode: RWX in filesystem mode will be prefered.
+
+For further details on storage clusters, see the
+(https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)[Openshift
+documentation].
+
+We can now create virtual machines using our new storage profile!

@@ -66,7 +66,7 @@ In order for live migrations to be supported, OpenShift VirtualMachines
 need to use a PVC with a ReadWriteMany access mode. We can verify this
 by running:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 oc get pvc
 ----
@@ -91,7 +91,7 @@ the destination node, and then live migrated the VM to that pod.
 
 We can view the running pods by executing:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 oc get pods
 ----
@@ -101,7 +101,7 @@ our virtual machine process is no longer in that pod!
 
 We can view the running VMs by typing:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 oc get vms
 ----
@@ -117,7 +117,7 @@ VirtualMachines run inside pods. As we learned above, our virtual
 machine is actually running from inside a pod. Let’s find out which node
 our virtual machine is running on:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
 echo "Your VM is running on node: ${NODENAME}"
@@ -125,7 +125,7 @@ echo "Your VM is running on node: ${NODENAME}"
 
 let’s cause a reboot of this node: We will now debug the node:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 oc debug node/$NODENAME
 ----
@@ -137,7 +137,7 @@ ____
 
 Chroot to the host
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 chroot /host
 ----
@@ -145,14 +145,14 @@ chroot /host
 And finally, reboot the OpenShift worker node hosting the running
 MongoDB pod:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 sudo reboot
 ----
 
 Let’s watch our VM and pod status in the default namespace:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 watch oc get pods,vms -o wide
 ----
