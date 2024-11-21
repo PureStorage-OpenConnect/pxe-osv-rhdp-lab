@@ -51,7 +51,7 @@ Log in to the Openshift Console by following the instructions above.
 Click on the `Virtualization` menu item, followed by `VirtualMachines`.
 We can then find the virtual machine we will be using for this snapshot.
 
-Click on the VM labeled `centos-stream9-snapshot`.
+Click on the VM labeled `centos-stream9-example`.
 
 image:snapshot-vm-01.png[Select VM]
 
@@ -79,7 +79,7 @@ Let’s accidently delete an important file:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-snapshot -t "-o StrictHostKeyChecking=no" -c 'sudo rm /etc/fstab'
+virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'sudo rm /etc/fstab'
 ----
 
 Oh no! fstab is an important file for the operation of our linux system.
@@ -87,7 +87,7 @@ We can verify that the file is indeed missing by running:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-snapshot -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
+virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
 ----
 
 Let’s fix our VM
@@ -99,7 +99,7 @@ Let’s log back in to the Openshift Console.
 Click on the `Virtualization` menu item, followed by `VirtualMachines`.
 We can then find the virtual machine we will be using for this snapshot.
 
-Click on the VM labeled `centos-stream9-snapshot`.
+Click on the VM labeled `centos-stream9-example`.
 
 image:snapshot-vm-01.png[Select VM]
 
@@ -139,7 +139,7 @@ our fstab file is back in place:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-snapshot -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
+virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
 ----
 
 We can now see the contents of the fstab file!

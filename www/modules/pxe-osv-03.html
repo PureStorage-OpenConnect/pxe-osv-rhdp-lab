@@ -150,9 +150,9 @@ bypass your web browsers security features to connect.</p>
 <div class="paragraph">
 <p>Run the following from our terminal tab:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat &lt;&lt; EOF | oc apply -f -
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cat &lt;&lt; EOF | oc apply -f -
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotClass
 metadata:
@@ -177,7 +177,7 @@ EOF</code></pre>
 We can then find the virtual machine we will be using for this snapshot.</p>
 </div>
 <div class="paragraph">
-<p>Click on the VM labeled <code>centos-stream9-snapshot</code>.</p>
+<p>Click on the VM labeled <code>centos-stream9-example</code>.</p>
 </div>
 <div class="paragraph">
 <p><span class="image"><img src="_images/snapshot-vm-01.png" alt="Select VM"></span></p>
@@ -214,18 +214,18 @@ going to make a change to our running virtual machine.</p>
 <div class="paragraph">
 <p>Let’s accidently delete an important file:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">virtctl ssh cloud-user@centos-stream9-snapshot -t "-o StrictHostKeyChecking=no" -c 'sudo rm /etc/fstab'</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'sudo rm /etc/fstab'</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Oh no! fstab is an important file for the operation of our linux system.
 We can verify that the file is indeed missing by running:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">virtctl ssh cloud-user@centos-stream9-snapshot -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -242,7 +242,7 @@ We can verify that the file is indeed missing by running:</p>
 We can then find the virtual machine we will be using for this snapshot.</p>
 </div>
 <div class="paragraph">
-<p>Click on the VM labeled <code>centos-stream9-snapshot</code>.</p>
+<p>Click on the VM labeled <code>centos-stream9-example</code>.</p>
 </div>
 <div class="paragraph">
 <p><span class="image"><img src="_images/snapshot-vm-01.png" alt="Select VM"></span></p>
@@ -295,9 +295,9 @@ on the <code>Console</code> or <code>Overview</code> tab.</p>
 <p>After a couple of minutes, our VM should be running. Let’s verify that
 our fstab file is back in place:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">virtctl ssh cloud-user@centos-stream9-snapshot -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'</code></pre>
 </div>
 </div>
 <div class="paragraph">

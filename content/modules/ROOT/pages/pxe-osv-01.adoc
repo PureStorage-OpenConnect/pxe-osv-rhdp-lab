@@ -17,7 +17,95 @@ We can then log in with the following credentials:
 Username: `kubeadmin` Password:
 `[[ Instruqt-Var key="KUBEADMIN_PASSWORD" hostname="cloud-client" ]]`
 
-== Step 1 - Deploy a Virtual Machine
+
+== Step 1 - Deploy a virtual machine using OC
+
+Let's start by building VM using the OC command line tool.
+
+=== Task 1: Generate an SSH keypair
+
+In order to interact with our virtual machine, let's create an ssh keypair.
+
+[source,sh,role=execute]
+----
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+----
+
+=== Task 2: Create an Openshift Secret with our SSH key:
+
+
+[source,sh,role=execute]
+----
+ID_RSA_PUB=$(cat ~/.ssh/id_rsa.pub)
+cat << EOF | oc apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authorized-keys
+data:
+  key: $(cat ~/.ssh/id_rsa.pub | base64 -w0)
+EOF
+----
+
+=== Task 3: Create an Openshift Virtual Machine
+
+[source,sh,role=execute]
+----
+cat << EOF | oc apply -f -
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  creationTimestamp: null
+  name: centos-stream9-example
+spec:
+  dataVolumeTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: centos-stream9-example-ds-centos-stream9
+    spec:
+      sourceRef:
+        kind: DataSource
+        name: centos-stream9
+        namespace: openshift-virtualization-os-images
+      storage:
+        resources: {}
+  instancetype:
+    name: u1.medium
+  preference:
+    name: centos.stream9
+  runStrategy: Always
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      domain:
+        devices: {}
+        resources: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - dataVolume:
+          name: centos-stream9-example-ds-centos-stream9
+        name: centos-stream9-example-ds-centos-stream9
+      - cloudInitNoCloud: 
+          userData: |-
+            #cloud-config
+            user: cloud-user
+        name: cloudinitdisk
+      accessCredentials:
+        - sshPublicKey:
+            propagationMethod:
+              noCloud: {}
+            source:
+              secret:
+                secretName: authorized-keys 
+EOF
+----
+
+The above created a VM called `centos-stream9-example` that we will use for the rest of the labs.
+
+We can log in to this VM 
+
+== Step 2 - Deploy a Virtual Machine using the Openshift Console
 
 Start by logging in to the OpenShift console with the information above.
 

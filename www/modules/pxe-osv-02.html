@@ -136,66 +136,25 @@ window.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_1_deploy_a_virtual_machine"><a class="anchor" href="#_step_1_deploy_a_virtual_machine"></a>Step 1 - Deploy a Virtual Machine</h2>
+<h2 id="_step_1_modify_our_vm"><a class="anchor" href="#_step_1_modify_our_vm"></a>Step 1 - Modify our VM</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Start by logging in to the OpenShift console with the information above.</p>
-</div>
-<div class="sect2">
-<h3 id="_task_1_create_a_new_vm"><a class="anchor" href="#_task_1_create_a_new_vm"></a>Task 1: Create a new VM</h3>
-<div class="paragraph">
-<p>Navigate to the virtualzation &gt; overview menu</p>
+<p>Let&#8217;s modify our VM to help prove that our changes are retained during a live migration and HA event.</p>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-01.png" alt="Select VMs"></span></p>
+<p>Let&#8217;s write some data to a file:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'echo "Redhat was here" &gt; ~/text'</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>Click the <code>Create Virtual Machine</code> button</p>
+<p>We can read our file at any time by running:</p>
 </div>
-<div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-02.png" alt="Click Button"></span></p>
-</div>
-<div class="paragraph">
-<p>Select the Centos Stream image. We can also use the default instance
-type.</p>
-</div>
-<div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-03-2.png" alt="Select CentOS"></span></p>
-</div>
-<div class="paragraph">
-<p>Verify that our StorageClass is set to <code>px-csi-db</code> and click
-<code>Create VirtualMachine</code></p>
-</div>
-<div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-04.png" alt="Select StorageClass"></span></p>
-</div>
-<div class="paragraph">
-<p>This will automatically start the virtual machine after a short
-provisioning process.</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p>It can take a couple of minutes for our VM to boot the
-first time</p>
-</div>
-</blockquote>
-</div>
-<div class="paragraph">
-<p>Explore the tabs for this virtual machine. We can view metrics,
-configure snapshots, and even view the YAML configuration to make
-automating easy.</p>
-</div>
-<div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-06.png" alt="Interact with VM"></span></p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p>The Virtual Machine name will be different in your
-environment</p>
-</div>
-</blockquote>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'</code></pre>
 </div>
 </div>
 </div>
@@ -208,9 +167,9 @@ environment</p>
 need to use a PVC with a ReadWriteMany access mode. We can verify this
 by running:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pvc</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get pvc</code></pre>
 </div>
 </div>
 <div class="sect2">
@@ -240,9 +199,9 @@ the destination node, and then live migrated the VM to that pod.</p>
 <div class="paragraph">
 <p>We can view the running pods by executing:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get pods</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -252,9 +211,17 @@ our virtual machine process is no longer in that pod!</p>
 <div class="paragraph">
 <p>We can view the running VMs by typing:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get vms</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get vms</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s check to make sure our data is still there:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'</code></pre>
 </div>
 </div>
 </div>
@@ -274,18 +241,18 @@ VirtualMachines run inside pods. As we learned above, our virtual
 machine is actually running from inside a pod. Let’s find out which node
 our virtual machine is running on:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
 echo "Your VM is running on node: ${NODENAME}"</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>let’s cause a reboot of this node: We will now debug the node:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc debug node/$NODENAME</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc debug node/$NODENAME</code></pre>
 </div>
 </div>
 <div class="quoteblock">
@@ -299,26 +266,26 @@ a pod needs to be attached to the node.</p>
 <div class="paragraph">
 <p>Chroot to the host</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">chroot /host</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">chroot /host</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>And finally, reboot the OpenShift worker node hosting the running
 MongoDB pod:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">sudo reboot</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">sudo reboot</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Let’s watch our VM and pod status in the default namespace:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">watch oc get pods,vms -o wide</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">watch oc get pods,vms -o wide</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -328,6 +295,14 @@ new node.</p>
 <div class="paragraph">
 <p>We can verify that our virtual machine is again running in the OpenShift
 Console, but because this was an unplanned outage, the VM has rebooted.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s check to make sure our data is still there:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'</code></pre>
+</div>
 </div>
 <div class="paragraph">
 <p>Click <code>Check</code> to move on to the next challenge</p>

@@ -17,48 +17,25 @@ We can then log in with the following credentials:
 Username: `kubeadmin` Password:
 `[[ Instruqt-Var key="KUBEADMIN_PASSWORD" hostname="cloud-client" ]]`
 
-== Step 1 - Deploy a Virtual Machine
 
-Start by logging in to the OpenShift console with the information above.
+== Step 1 - Modify our VM
 
-=== Task 1: Create a new VM
+Let's modify our VM to help prove that our changes are retained during a live migration and HA event.
 
-Navigate to the virtualzation > overview menu
+Let's write some data to a file:
 
-image:create-vm-01.png[Select VMs]
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'echo "Redhat was here" > ~/text'
+----
 
-Click the `Create Virtual Machine` button
 
-image:create-vm-02.png[Click Button]
+We can read our file at any time by running:
 
-Select the Centos Stream image. We can also use the default instance
-type.
-
-image:create-vm-03-2.png[Select CentOS]
-
-Verify that our StorageClass is set to `px-csi-db` and click
-`Create VirtualMachine`
-
-image:create-vm-04.png[Select StorageClass]
-
-This will automatically start the virtual machine after a short
-provisioning process.
-
-____
-It can take a couple of minutes for our VM to boot the
-first time
-____
-
-Explore the tabs for this virtual machine. We can view metrics,
-configure snapshots, and even view the YAML configuration to make
-automating easy.
-
-image:create-vm-06.png[Interact with VM]
-
-____
-The Virtual Machine name will be different in your
-environment
-____
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
+----
 
 == Step 2 - Test Live Migrations
 
@@ -93,7 +70,7 @@ We can view the running pods by executing:
 
 [source,sh,role=execute]
 ----
-oc get pods
+oc get pods -o wide
 ----
 
 Notice that one of our pods is in the `Completed` state, this is because
@@ -104,6 +81,13 @@ We can view the running VMs by typing:
 [source,sh,role=execute]
 ----
 oc get vms
+----
+
+Let's check to make sure our data is still there:
+
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
 ----
 
 == Step 3 - Providing HA
@@ -162,5 +146,12 @@ new node.
 
 We can verify that our virtual machine is again running in the OpenShift
 Console, but because this was an unplanned outage, the VM has rebooted.
+
+Let's check to make sure our data is still there:
+
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
+----
 
 Click `Check` to move on to the next challenge
