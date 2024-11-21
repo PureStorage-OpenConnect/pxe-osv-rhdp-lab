@@ -6,7 +6,12 @@ Classes, as well as Openshift specific Storage Profiles.
 
 === Creating our project
 
-For this lab, we will be using a new project.
+For this lab, we will be using a new project. 
+
+[source,sh,role=execute]
+----
+oc project vmtest
+----
 
 === Reminder: Accessing the Openshift Console
 
@@ -44,7 +49,7 @@ Portworx deploys serveral pre-configured storage classes when the
 storage cluster was created. These storage classes offer a veriety of
 configuration options. To view the current storage classes run:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 oc get sc
 ----
@@ -125,7 +130,7 @@ the prefered access mode.
 We can see the current configuration of our new storage profile by
 running:
 
-[source,bash,run]
+[source,sh,role=execute]
 ----
 oc get storageprofile px-csi-vm-example -o yaml
 ----
