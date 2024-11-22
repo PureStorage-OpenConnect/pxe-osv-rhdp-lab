@@ -18,7 +18,7 @@ runtime:
 output:
   dir: ./www
 
-antora:
-  extensions:
-  - require: ./content/lib/dev-mode.js
-    enabled: true
+# antora:
+#   extensions:
+#   - require: ./content/lib/dev-mode.js
+#     enabled: true

@@ -22,10 +22,10 @@ ui:
 runtime:
   cache_dir: ./.cache/antora
 
-antora:
-  extensions:
-    - require: ./content/lib/dev-mode.js
-      enabled: true
+# antora:
+#   extensions:
+#     - require: ./content/lib/dev-mode.js
+#       enabled: true
 
 output:
   dir: ./www
