@@ -1,130 +1,141 @@
-== Scenario - Virtual Machine snapshots with Portworx
+== Scenario - Persistent Storage Volume Provisioning and Availability for Virtual Machines
 
-In this scerario, we will create a virtual machine snapshot.
+In this scenario, we will learn about how to provision a virtual machine
+on OpenShift Virtualization with Portworx.
 
-We have created a new virtual machine that we will be using for this
-excercise.
+== Step 1 - Modify our VM
 
-== Virtual Machine Snapshots
+Let's modify our VM to help prove that our changes are retained during a live migration and HA event.
 
-=== Task 1: Create a VolumeSnapshotClass
-
-In order to take snapshots, we need to configure a VolumeSnapshotClass.
-
-Run the following from our terminal tab:
+Let's write some data to a file:
 
 [source,sh,role=execute]
 ----
-cat << EOF | oc apply -f -
-apiVersion: snapshot.storage.k8s.io/v1
-kind: VolumeSnapshotClass
-metadata:
- name: px-csi-snapclass
- annotations:
-   snapshot.storage.kubernetes.io/is-default-class: "true"
-driver: pxd.portworx.com
-deletionPolicy: Delete
-parameters:
- csi.openstorage.org/snapshot-type: local
-EOF
+virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'echo "Redhat was here" > ~/text'
 ----
 
-=== Task 2: Take a snapshot of our new VM
-
-Log in to the OpenShift Console.
-
-Click on the `Virtualization` menu item, followed by `VirtualMachines`.
-We can then find the virtual machine we will be using for this snapshot.
-
-Click on the VM labeled `centos-stream9-example`.
-
-image:snapshot-vm-01.png[Select VM]
-
-Navigate to the `Snapshots` tab and select `Take Snapshot`
-
-image:snapshot-vm-02.png[Take Snapshot]
-
-We can accept the default and select `Save`
-
-____
-Note: You will see a warning that our `cloudinitdisk` will not be
-included in this snapshot. The `cloudinitdisk` is only used to configure
-our virtual machine and provide customizations. We can safely ignore
-this warning.
-____
-
-image:snapshot-vm-03.png[Save Snapshot]
-
-=== Task 3: Make a change to our VM
-
-Let’s switch back to the command line. To make a change, we are simply
-going to make a change to our running virtual machine.
-
-Let’s accidently delete an important file:
+We can read our file at any time by running:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'sudo rm /etc/fstab'
+virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
 ----
 
-Oh no! fstab is an important file for the operation of our linux system.
-We can verify that the file is indeed missing by running:
+== Step 2 - Test Live Migrations
+
+In order for live migrations to be supported, OpenShift VirtualMachines
+need to use a PVC with a ReadWriteMany access mode. We can verify this
+by running:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
+oc get pvc
 ----
 
-Let’s fix our VM
+=== Task 1: Live Migrate a VM
 
-=== Task 4: Restore our snapshot
+Back in the OpenShift Console, click on the `Overview` tab and take note
+of the node that our VM is running on.
 
-Let’s log back in to the Openshift Console.
+image:livemigrate-vm-01.png[get ocp node]
 
-Click on the `Virtualization` menu item, followed by `VirtualMachines`.
-We can then find the virtual machine we will be using for this snapshot.
+We can now migrate the VM to a new node by selecting the `Actions` menu,
+and then clicking `Migrate`
 
-Click on the VM labeled `centos-stream9-example`.
+image:livemigrate-vm-02.png[migrate vm]
 
-image:snapshot-vm-01.png[Select VM]
+After a few moments the interface will update with the new node.
 
-Click on the `Actions` menu, and select `Stop`
+It is important to understand that in OpenShift Virtualization
+VirtualMachines run inside pods. This migration spawned a new pod, on
+the destination node, and then live migrated the VM to that pod.
 
-image:snapshot-vm-04.png[Stop VM]
-
-This will stop our running VM so that we can restore our snapshot.
-
-Click on the `Snapshots` tab. Then click on the kebab menu by the
-snapshot we created earlier and click
-`Restore VirtualMachine from snapshot`
-
-image:snapshot-vm-05.png[restore VM]
-
-____
-Restoring a snapshot is a distructive operation as it
-discards all changes that were made to a virtual machine since the
-snapshot was taken. To avoid loosing data, it is possible to take a
-snapshot before restoring our virtual machine.
-____
-
-Confirm the restore by clicking the `Restore` button.
-
-We can now start our virtual machine by clicking on the `Action` menu
-and clicking `Start`
-
-image:snapshot-vm-06.png[start VM]
-
-We can check on the progress of our virtual machine’s boot by clicking
-on the `Console` or `Overview` tab.
-
-Task 5: Verify our restore
-
-After a couple of minutes, our VM should be running. Let’s verify that
-our fstab file is back in place:
+We can view the running pods by executing:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
+oc get pods -o wide
 ----
 
-We can now see the contents of the fstab file!
+Notice that one of our pods is in the `Completed` state, this is because
+our virtual machine process is no longer in that pod!
+
+We can view the running VMs by typing:
+
+[source,sh,role=execute]
+----
+oc get vms
+----
+
+Let's check to make sure our data is still there:
+
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
+----
+
+== Step 3 - Providing HA
+
+=== Task 1: Proving HA
+
+We will now induce a failure in our OpenShift cluster.
+
+It is important to understand that in OpenShift Virtualization,
+VirtualMachines run inside pods. As we learned above, our virtual
+machine is actually running from inside a pod. Let’s find out which node
+our virtual machine is running on:
+
+[source,sh,role=execute]
+----
+NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
+echo "Your VM is running on node: ${NODENAME}"
+----
+
+Let’s cause a reboot of this node. We will now debug the node:
+
+[source,sh,role=execute]
+----
+oc debug node/$NODENAME
+----
+
+____
+Running `oc debug node/$NODENAME` can take a few seconds as
+a pod needs to be attached to the node.
+____
+
+Chroot to the host
+
+[source,sh,role=execute]
+----
+chroot /host
+----
+
+And finally, reboot the OpenShift worker node hosting the running
+MongoDB pod:
+
+[source,sh,role=execute]
+----
+sudo reboot
+----
+
+Let's watch our VM and pod status in the default namespace:
+
+[source,sh,role=execute]
+----
+watch oc get pods,vms -o wide
+----
+
+Take note of the NODE column. We will see a new launcher pod start on a
+new node.
+
+We can verify that our virtual machine is again running in the OpenShift
+Console, but because this was an unplanned outage, the VM has rebooted.
+
+Let's check to make sure our data is still there:
+
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
+----
+
+You are ready to move to the next challenge.

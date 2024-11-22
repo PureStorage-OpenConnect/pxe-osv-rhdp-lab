@@ -1,0 +1,24 @@
+---
+site:
+  title: Lab 14 - Using Portworx with OpenShift Virtualization
+  start_page: modules::index.adoc
+
+content:
+  sources:
+  - url: .
+    start_path: content
+
+ui:
+  bundle:
+    url: https://github.com/rhpds/showroom_theme_rh1/releases/download/v0.0.4/ui-bundle.zip
+
+runtime:
+  cache_dir: ./.cache/antora
+
+output:
+  dir: ./www
+
+antora:
+  extensions:
+  - require: ./content/lib/dev-mode.js
+    enabled: true

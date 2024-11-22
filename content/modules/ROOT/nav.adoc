@@ -1,4 +1,4 @@
-* xref:pxe-osv-00.adoc[0. Create a Storage Class]
-* xref:pxe-osv-01.adoc[1. Create a new VM]
-* xref:pxe-osv-02.adoc[2. Live Migrations and HA]
-* xref:pxe-osv-03.adoc[3. Virtual Machine Snapshots]
+* xref:pxe-osv-01.adoc[1. Create a Storage Class]
+* xref:pxe-osv-02.adoc[2. Create a new VM]
+* xref:pxe-osv-03.adoc[3. Live Migrations and HA]
+* xref:pxe-osv-04.adoc[4. Virtual Machine Snapshots]
