@@ -1,1 +1,4 @@
-www
+.vscode
+.cache/*
+www/*
+.swp

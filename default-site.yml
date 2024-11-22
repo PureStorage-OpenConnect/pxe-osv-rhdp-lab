@@ -1,13 +1,12 @@
 ---
 site:
-  title: Showroom Template Demo
-  url: https://redhat-scholars.github.io/course-template
+  title: Using Portworx with OpenShift Virtualization
   start_page: modules::index.adoc
 
 content:
   sources:
-    - url: .
-      start_path: content
+  - url: .
+    start_path: content
 
 ui:
   bundle:
@@ -23,10 +22,10 @@ ui:
 runtime:
   cache_dir: ./.cache/antora
 
-antora:
-  extensions:
-    - require: ./content/lib/dev-mode.js
-      enabled: true
+# antora:
+#   extensions:
+#     - require: ./content/lib/dev-mode.js
+#       enabled: true
 
 output:
   dir: ./www
