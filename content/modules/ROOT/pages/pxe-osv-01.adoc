@@ -3,24 +3,9 @@
 In this scenario, we will learn about how to provision a virtual machine
 on OpenShift Virtualization with Purestorage.
 
-=== Reminder: Accessing the Red Hat OpenShift Console
-
-To connect to the console, click on the `OpenShift Console` tab above.
-
-____
-The `OpenShift Console` tab will open in a new browser
-window.
-____
-
-We can then log in with the following credentials:
-
-Username: `kubeadmin` Password:
-`[[ Instruqt-Var key="KUBEADMIN_PASSWORD" hostname="cloud-client" ]]`
-
-
 == Step 1 - Deploy a virtual machine using OC
 
-Let's start by building VM using the OC command line tool.
+Let's start by building VM using the `oc` command line tool.
 
 === Task 1: Generate an SSH keypair
 
@@ -107,7 +92,7 @@ We can log in to this VM
 
 == Step 2 - Deploy a Virtual Machine using the Openshift Console
 
-Start by logging in to the OpenShift console with the information above.
+Start by logging in to the OpenShift console.
 
 === Task 1: Create a new VM
 

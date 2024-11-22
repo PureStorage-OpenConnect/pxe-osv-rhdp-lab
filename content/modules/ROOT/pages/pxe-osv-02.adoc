@@ -1,22 +1,7 @@
 == Scenario - Persistent Storage Volume Provisioning and Availability for Virtual Machines
 
 In this scenario, we will learn about how to provision a virtual machine
-on OpenShift Virtualization with Purestorage.
-
-=== Reminder: Accessing the Red Hat OpenShift Console
-
-To connect to the console, click on the `OpenShift Console` tab above.
-
-____
-The `OpenShift Console` tab will open in a new browser
-window.
-____
-
-We can then log in with the following credentials:
-
-Username: `kubeadmin` Password:
-`[[ Instruqt-Var key="KUBEADMIN_PASSWORD" hostname="cloud-client" ]]`
-
+on OpenShift Virtualization with Portworx.
 
 == Step 1 - Modify our VM
 
@@ -62,7 +47,7 @@ image:livemigrate-vm-02.png[migrate vm]
 
 After a few moments the interface will update with the new node.
 
-It is important to understand that in OpenShift Virtualization,
+It is important to understand that in OpenShift Virtualization
 VirtualMachines run inside pods. This migration spawned a new pod, on
 the destination node, and then live migrated the VM to that pod.
 
@@ -107,7 +92,7 @@ NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
 echo "Your VM is running on node: ${NODENAME}"
 ----
 
-let’s cause a reboot of this node: We will now debug the node:
+Let’s cause a reboot of this node. We will now debug the node:
 
 [source,sh,role=execute]
 ----
@@ -154,4 +139,4 @@ Let's check to make sure our data is still there:
 virtctl ssh cloud-user@centos-stream9-example  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
 ----
 
-Click `Check` to move on to the next challenge
+You are ready to move to the next challenge.
