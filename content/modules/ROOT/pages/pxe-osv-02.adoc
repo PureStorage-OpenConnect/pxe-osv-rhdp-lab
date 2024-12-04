@@ -90,6 +90,11 @@ The above created a VM called `centos-stream9-example` that we will use for the 
 
 Once the VM is running we can log into this VM using this command (if you do so make sure to exit again by pressing `Ctrl-D` or typing `exit` followed by pressing `Enter`):
 
+====
+[TIP]
+
+It can take a couple of minutes for the VM to provision and start.
+
 [source,sh,role=execute]
 ----
 virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no"
@@ -114,7 +119,7 @@ type.
 
 image:create-vm-03-2.png[Select CentOS]
 
-Verify that our StorageClass is set to `px-csi-db` and click
+Verify that our StorageClass is set to `px-csi-vm` and click
 `Create VirtualMachine`
 
 image:create-vm-04.png[Select StorageClass]

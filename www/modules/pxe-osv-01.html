@@ -3,9 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Untitled :: Showroom Template Demo</title>
-    <link rel="canonical" href="https://redhat-scholars.github.io/course-template/modules/pxe-osv-01.html">
-    <link rel="prev" href="pxe-osv-00.html">
+    <title>Untitled :: Using Portworx with OpenShift Virtualization</title>
+    <link rel="prev" href="index.html">
     <link rel="next" href="pxe-osv-02.html">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../_/css/site.css">
@@ -19,7 +18,7 @@
       <a class="navbar-item" href="https://demo.redhat.com" target="_blank" style="margin-left: 5%;">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1508.5 178.739" style="width: 278px;"><g fill="#fff"><path d="M316.6 63.2v-56H342a21.279 21.279 0 0 1 7.8 1.3 18.111 18.111 0 0 1 5.9 3.5 15.577 15.577 0 0 1 5 11.8 15.051 15.051 0 0 1-3.1 9.5 16.836 16.836 0 0 1-8.4 5.8l12.5 24.1h-9.3l-11.6-23H325v23Zm24.7-48.6H325v18.7h16.3q5.25 0 8.1-2.7a8.7 8.7 0 0 0 2.8-6.6 8.7 8.7 0 0 0-2.8-6.6c-1.8-1.9-4.5-2.8-8.1-2.8ZM364.1 42.8a20.674 20.674 0 0 1 1.6-8.2 20.288 20.288 0 0 1 4.3-6.7 19.92 19.92 0 0 1 6.5-4.5 19.718 19.718 0 0 1 8-1.6 18.463 18.463 0 0 1 7.8 1.6 18.677 18.677 0 0 1 6.2 4.5 20.927 20.927 0 0 1 4.1 6.8 23.2 23.2 0 0 1 1.5 8.4v2.3H372a13.822 13.822 0 0 0 4.6 8.4 13.6 13.6 0 0 0 9.1 3.3 15.553 15.553 0 0 0 5.7-1 12.858 12.858 0 0 0 4.6-2.6l5.1 5a25.983 25.983 0 0 1-7.4 4.1 24.69 24.69 0 0 1-8.4 1.3 21.306 21.306 0 0 1-8.4-1.6 22.763 22.763 0 0 1-6.8-4.4 20.788 20.788 0 0 1-4.5-6.7 23.2 23.2 0 0 1-1.5-8.4Zm20.2-14.2a11.527 11.527 0 0 0-8 3 13.046 13.046 0 0 0-4.2 7.8h24.2a13.091 13.091 0 0 0-4.2-7.8 11.106 11.106 0 0 0-7.8-3ZM443.1 63.2v-3.8a19.448 19.448 0 0 1-5.8 3.3 18.924 18.924 0 0 1-6.7 1.2 19.824 19.824 0 0 1-14.6-6.1 22.268 22.268 0 0 1-4.4-6.7 21.812 21.812 0 0 1 0-16.4A20.534 20.534 0 0 1 416 28a19.335 19.335 0 0 1 6.6-4.5 20.334 20.334 0 0 1 8.2-1.6 20.7 20.7 0 0 1 6.6 1 19.415 19.415 0 0 1 5.7 3V7.2l8-1.8v57.8Zm-25.2-20.4a13.718 13.718 0 0 0 4 10.1 13.45 13.45 0 0 0 9.8 4.1 14.956 14.956 0 0 0 6.4-1.3 15.954 15.954 0 0 0 4.9-3.6V33.6a14.988 14.988 0 0 0-4.9-3.5 15.271 15.271 0 0 0-6.4-1.3 13.423 13.423 0 0 0-9.9 4 13.806 13.806 0 0 0-3.9 10ZM478.1 63.2v-56h8.4v24h29.8v-24h8.4v56h-8.4V38.8h-29.8v24.4ZM547.2 64a16.483 16.483 0 0 1-10.8-3.5 11.037 11.037 0 0 1-4.2-8.9 10.375 10.375 0 0 1 4.7-9.2 20.76 20.76 0 0 1 11.8-3.2 27.841 27.841 0 0 1 5.8.6 27.374 27.374 0 0 1 5.3 1.6v-4.3a8.143 8.143 0 0 0-2.6-6.5 11.452 11.452 0 0 0-7.4-2.2 20.788 20.788 0 0 0-6 .9 34.616 34.616 0 0 0-6.6 2.6l-3-6a54.169 54.169 0 0 1 8.4-3.1 33.18 33.18 0 0 1 8.3-1.1c5.2 0 9.3 1.3 12.2 3.8s4.4 6.1 4.4 10.8v27h-7.8v-3.5a19.441 19.441 0 0 1-5.8 3.2 23.54 23.54 0 0 1-6.7 1Zm-7.3-12.6a5.646 5.646 0 0 0 2.6 4.8 11.193 11.193 0 0 0 6.6 1.8 16.256 16.256 0 0 0 5.9-1 14.449 14.449 0 0 0 4.9-2.9V47a19.778 19.778 0 0 0-4.8-1.8 24.933 24.933 0 0 0-5.7-.6 11.859 11.859 0 0 0-6.8 1.8 5.728 5.728 0 0 0-2.7 5ZM580.6 53.2v-24H572v-6.7h8.6V12.1l7.9-1.9v12.3h12v6.7h-12v22.1a5.94 5.94 0 0 0 1.4 4.4c.9.9 2.5 1.3 4.6 1.3a23.637 23.637 0 0 0 3-.2 10.857 10.857 0 0 0 2.8-.8v6.7a19.28 19.28 0 0 1-3.8.9 27.484 27.484 0 0 1-3.8.3c-3.9 0-7-.9-9-2.8-2-1.7-3.1-4.4-3.1-7.9Z"></path></g><path d="M127 90.2c12.5 0 30.6-2.6 30.6-17.5a12.678 12.678 0 0 0-.3-3.4L149.8 37c-1.7-7.1-3.2-10.3-15.7-16.6-9.7-5-30.8-13.1-37.1-13.1-5.8 0-7.5 7.5-14.4 7.5-6.7 0-11.6-5.6-17.9-5.6-6 0-9.9 4.1-12.9 12.5 0 0-8.4 23.7-9.5 27.2a4.216 4.216 0 0 0-.3 1.9c0 9.2 36.3 39.4 85 39.4Zm32.5-11.4c1.7 8.2 1.7 9.1 1.7 10.1 0 14-15.7 21.8-36.4 21.8-46.8 0-87.7-27.4-87.7-45.5a17.535 17.535 0 0 1 1.5-7.3C21.8 58.8 0 61.8 0 81c0 31.5 74.6 70.3 133.7 70.3 45.3 0 56.7-20.5 56.7-36.6-.1-12.8-11-27.3-30.9-35.9Z" fill="#e00"></path><path d="M159.5 78.8c1.7 8.2 1.7 9.1 1.7 10.1 0 14-15.7 21.8-36.4 21.8-46.8 0-87.7-27.4-87.7-45.5a17.535 17.535 0 0 1 1.5-7.3l3.7-9.1a4.877 4.877 0 0 0-.3 2c0 9.2 36.3 39.4 85 39.4 12.5 0 30.6-2.6 30.6-17.5a12.678 12.678 0 0 0-.3-3.4Z"></path><path d="M253.5 158.7a2.22 2.22 0 0 1-2.2-2.2V2.2a2.2 2.2 0 0 1 4.4 0v154.2a2.242 2.242 0 0 1-2.2 2.3Z" fill="#fff"></path><text data-name="Demo Platform" transform="translate(1186 149)" fill="#fff" font-size="82" font-family="'RedHatDisplay', 'Overpass', overpass, helvetica, arial, sans-serif" font-weight="700"><tspan x="-877.892" y="0">Demo Platform</tspan></text></svg>
       </a>
-      <a class="navbar-item site-title" target="__blank" style="color: #fff !important;" href="https://redhat-scholars.github.io/course-template">Showroom Template Demo</a>
+      <a class="navbar-item site-title" target="__blank" style="color: #fff !important;" href="..">Using Portworx with OpenShift Virtualization</a>
     </div>
     <div id="topbar-nav" class="navbar-menu">
       <div class="navbar-end">
@@ -40,36 +39,24 @@
     <div class="panels">
 <div class="nav-panel-menu is-active" data-panel="menu">
   <nav class="nav-menu">
-    <h3 class="title"><a href="index.html" class=" query-params-link">Openshift Virtualization and Portworx</a></h3>
+    <h3 class="title"><a href="index.html" class=" query-params-link">Using Portworx with OpenShift Virtualization</a></h3>
 <ul class="nav-list">
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
-  <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="pxe-osv-00.html">0. Create a Storage Class</a>
-  </li>
   <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="pxe-osv-01.html">1. Create a new VM</a>
+    <a class="nav-link" href="pxe-osv-01.html">1. Install Portworx</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="pxe-osv-02.html">2. Live Migrations and HA</a>
+    <a class="nav-link" href="pxe-osv-02.html">2. Create a new VM</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="pxe-osv-03.html">3. Virtual Machine Snapshots</a>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="0">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Dev Mode</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="module-01.html">Building an Application with rpms</a>
+    <a class="nav-link" href="pxe-osv-03.html">3. Live Migrations and HA</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="module-02.html">Managing an Application from GitHub</a>
+    <a class="nav-link" href="pxe-osv-04.html">4. Virtual Machine Snapshots</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="attrs-page.html">Attributes Page</a>
+    <a class="nav-link" href="pxe-osv-05.html">5. Autopilot</a>
   </li>
 </ul>
   </li>
@@ -81,7 +68,7 @@
   </div>
   <ul class="components">
     <li class="component is-current">
-      <span class="title">Openshift Virtualization and Portworx</span>
+      <span class="title">Using Portworx with OpenShift Virtualization</span>
       <ul class="versions">
         <li class="version is-current">
           <a href="index.html">master</a>
@@ -98,210 +85,417 @@
   <a href="index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
-    <li><a href="index.html">Openshift Virtualization and Portworx</a></li>
-    <li><a href="pxe-osv-01.html">1. Create a new VM</a></li>
+    <li><a href="index.html">Using Portworx with OpenShift Virtualization</a></li>
+    <li><a href="pxe-osv-01.html">1. Install Portworx</a></li>
   </ul>
 </nav>
 </div>
   <div class="content">
 <article class="doc">
 <div class="sect1">
-<h2 id="_scenario_persistent_storage_volume_provisioning_and_availability_for_virtual_machines"><a class="anchor" href="#_scenario_persistent_storage_volume_provisioning_and_availability_for_virtual_machines"></a>Scenario - Persistent Storage Volume Provisioning and Availability for Virtual Machines</h2>
+<h2 id="_scenario_storage_classes_and_storage_profiles"><a class="anchor" href="#_scenario_storage_classes_and_storage_profiles"></a>Scenario - Storage Classes and Storage Profiles</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In this scenario, we will learn about how to provision a virtual machine
-on OpenShift Virtualization with Purestorage.</p>
+<p>In this scerario, we will be install Portworx Enterprise on an existing openshift cluster, as well as creating a new default StorageClass for virtual machines.</p>
 </div>
 <div class="sect2">
-<h3 id="_reminder_accessing_the_red_hat_openshift_console"><a class="anchor" href="#_reminder_accessing_the_red_hat_openshift_console"></a>Reminder: Accessing the Red Hat OpenShift Console</h3>
+<h3 id="_creating_our_project"><a class="anchor" href="#_creating_our_project"></a>Creating our project</h3>
 <div class="paragraph">
-<p>To connect to the console, click on the <code>OpenShift Console</code> tab above.</p>
+<p>For this lab, we will be using a new project. In the terminal window execute the following command to create a new project.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc new-project vmtest</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_reminder_accessing_the_openshift_console"><a class="anchor" href="#_reminder_accessing_the_openshift_console"></a>Reminder: Accessing the Openshift Console</h3>
 <div class="paragraph">
-<p>The <code>OpenShift Console</code> tab will open in a new browser
-window.</p>
+<p>You can connect to the terminal in the windows to the right.</p>
 </div>
-</blockquote>
+<div class="exampleblock">
+<div class="content">
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The {openshift_cluster_console_url}[OpenShift Web Console^] tab will open in a new browser.
+window.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>We can then log in with the following credentials:</p>
+<p>The username is <code>{openshift_cluster_admin_username}</code> and the password is <code>{openshift_cluster_admin_password}</code></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_task_exploring_the_cli"><a class="anchor" href="#_task_exploring_the_cli"></a>Task: Exploring the CLI</h3>
+<div class="paragraph">
+<p>Red Hat OpenShift uses the <code>oc</code> cli utility. This utility has a similar
+syntax to kubectl, but with some OpenShift specific extensions.</p>
 </div>
 <div class="paragraph">
-<p>Username: <code>kubeadmin</code> Password:
-<code>[[ Instruqt-Var key="KUBEADMIN_PASSWORD" hostname="cloud-client" ]]</code></p>
+<p>Let’s look at the nodes that make up our cluster:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get nodes</code></pre>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_1_deploy_a_virtual_machine_using_oc"><a class="anchor" href="#_step_1_deploy_a_virtual_machine_using_oc"></a>Step 1 - Deploy a virtual machine using OC</h2>
+<h2 id="_install_portworx"><a class="anchor" href="#_install_portworx"></a>Install Portworx</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Let&#8217;s start by building VM using the OC command line tool.</p>
+<p>To install Portworx, we first need to install the Portworx Operator.</p>
 </div>
 <div class="sect2">
-<h3 id="_task_1_generate_an_ssh_keypair"><a class="anchor" href="#_task_1_generate_an_ssh_keypair"></a>Task 1: Generate an SSH keypair</h3>
+<h3 id="_task_install_the_portworx_operator"><a class="anchor" href="#_task_install_the_portworx_operator"></a>Task: Install the Portworx Operator</h3>
 <div class="paragraph">
-<p>In order to interact with our virtual machine, let&#8217;s create an ssh keypair.</p>
+<p>Navigate to <code>Operators</code> &gt; <code>Operator Hub</code> and type <code>Portworx</code> in to the
+filter as seen in this screenshot:</p>
+</div>
+<div class="paragraph">
+<div class="title">install-operator</div>
+<p><span class="image"><img src="_images/02-pxeinstall-installoperator-01.png" alt="install-operator"></span></p>
+</div>
+<div class="paragraph">
+<p>and then click on the <code>Portworx Enterprise</code> operator.</p>
+</div>
+<div class="paragraph">
+<p>We will now see the installation screen on the right of our interface.
+The defaults will suffice, and will grab the latest stable version of
+the operator. Click <code>Install</code></p>
+</div>
+<div class="paragraph">
+<div class="title">install-operator02</div>
+<p><span class="image"><img src="_images/03-pxeinstall-installoperator-02.png" alt="install-operator02"></span></p>
+</div>
+<div class="paragraph">
+<p>On the next screen, <code>enable</code> the <code>Console plugin</code></p>
+</div>
+<div class="paragraph">
+<p>Create the a new project named <code>portworx</code> and install the Portworx
+operator in to the new <code>portworx</code> project.</p>
+</div>
+<div class="paragraph">
+<div class="title">install-operator03</div>
+<p><span class="image"><img src="_images/04-pxeinstall-installoperator-03.png" alt="install-operator03"></span></p>
+</div>
+<div class="paragraph">
+<p>and click the <code>Install</code> button.</p>
+</div>
+<div class="paragraph">
+<p>The installation will prompt you to create a <code>StorageCluster</code> object,
+instead, click <code>View installed Operators in Namespace portworx</code></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_task_install_portworx_storagecluster"><a class="anchor" href="#_task_install_portworx_storagecluster"></a>Task: Install Portworx StorageCluster</h3>
+<div class="paragraph">
+<p>For this step, we need to switch back to our <code>Terminal</code> tab in the
+Instruqt interface.</p>
+</div>
+<div class="paragraph">
+<p>Installing the the Portworx StorageCluster requires a few steps. We need
+to ensure that we have a service account secret for our gcloud
+environment to create and manage disks. Portworx will create and expand
+GCP disks based on our specifications.</p>
+</div>
+<div class="paragraph">
+<p>Create this secret by running:</p>
 </div>
 <div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_task_2_create_an_openshift_secret_with_our_ssh_key"><a class="anchor" href="#_task_2_create_an_openshift_secret_with_our_ssh_key"></a>Task 2: Create an Openshift Secret with our SSH key:</h3>
-<div class="listingblock execute">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">ID_RSA_PUB=$(cat ~/.ssh/id_rsa.pub)
-cat &lt;&lt; EOF | oc apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: authorized-keys
-data:
-  key: $(cat ~/.ssh/id_rsa.pub | base64 -w0)
-EOF</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_task_3_create_an_openshift_virtual_machine"><a class="anchor" href="#_task_3_create_an_openshift_virtual_machine"></a>Task 3: Create an Openshift Virtual Machine</h3>
-<div class="listingblock execute">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cat &lt;&lt; EOF | oc apply -f -
-apiVersion: kubevirt.io/v1
-kind: VirtualMachine
-metadata:
-  creationTimestamp: null
-  name: centos-stream9-example
-spec:
-  dataVolumeTemplates:
-  - metadata:
-      creationTimestamp: null
-      name: centos-stream9-example-ds-centos-stream9
-    spec:
-      sourceRef:
-        kind: DataSource
-        name: centos-stream9
-        namespace: openshift-virtualization-os-images
-      storage:
-        resources: {}
-  instancetype:
-    name: u1.medium
-  preference:
-    name: centos.stream9
-  runStrategy: Always
-  template:
-    metadata:
-      creationTimestamp: null
-    spec:
-      domain:
-        devices: {}
-        resources: {}
-      terminationGracePeriodSeconds: 180
-      volumes:
-      - dataVolume:
-          name: centos-stream9-example-ds-centos-stream9
-        name: centos-stream9-example-ds-centos-stream9
-      - cloudInitNoCloud:
-          userData: |-
-            #cloud-config
-            user: cloud-user
-        name: cloudinitdisk
-      accessCredentials:
-        - sshPublicKey:
-            propagationMethod:
-              noCloud: {}
-            source:
-              secret:
-                secretName: authorized-keys
-EOF</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">echo $INSTRUQT_GCP_PROJECT_GCPPROJECT_SERVICE_ACCOUNT_KEY | base64 -d &gt; gcloud.json
+oc -n portworx create secret generic px-gcloud --from-file=gcloud.json</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The above created a VM called <code>centos-stream9-example</code> that we will use for the rest of the labs.</p>
+<p>We can now grab our StorageCluster specification:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">curl -o px-spec.yaml "https://install.portworx.com/3.1?operator=true&amp;mc=false&amp;kbver=1.29.8&amp;ns=portworx&amp;b=true&amp;iop=6&amp;s=%22type%3Dpd-standard%2Csize%3D50%22&amp;ce=gce&amp;r=17001&amp;c=px-cluster&amp;osft=true&amp;stork=true&amp;csi=true&amp;mon=true&amp;tel=false&amp;st=k8s&amp;promop=true"</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>We can log in to this VM</p>
+<p>We now need to insert a reference for our secret in to our
+StorageCluster specification. This can be done with a little <code>yq</code> magic:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">yq -iy '.spec.volumes += [{"name": "gcloud", "mountPath": "/etc/pwx/gce", "secret": {"secretName": "px-gcloud"}}] | .spec.env += [{"name": "GOOGLE_APPLICATION_CREDENTIALS", "value": "/etc/pwx/gce/gcloud.json"}]' px-spec.yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Take a look at our current manifest by using the cat utility:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cat px-spec.yaml</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Lines 14-16 contain our disk configuration. These disks will be
+created and attached as part of the Portworx installation.</p>
+</li>
+<li>
+<p>Lines 35-37 contain a reference to our OpenShift secret that we will
+use to provision the above disk specification.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Additional documentation can be found
+<a href="https://docs.portworx.com/portworx-enterprise/platform/openshift/ocp-gcp/install-on-ocp-gcp">here</a></p>
+</div>
+<div class="paragraph">
+<p>We can now apply the specification:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc apply -f px-spec.yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The install can take about 5 minutes. We can watch the containers come
+up by running:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">watch oc -n portworx get pods</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When all three of the <code>px-cluster</code> pods have a Ready status of <code>1/1</code> we
+can press <code>ctrl-c</code> to exit out of our watch command.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_task_check_the_portworx_cluster_status"><a class="anchor" href="#_task_check_the_portworx_cluster_status"></a>Task: Check the Portworx cluster status</h3>
+<div class="paragraph">
+<p>Portworx ships with a <code>pxctl</code> CLI utility that you can use for managing
+Portworx. We’ll cover this utility more in the labs here in a little
+bit!</p>
+</div>
+<div class="paragraph">
+<p>For now, we’ll run <code>sudo pxctl status</code> via <code>oc</code> in one of the Portworx
+pods to check the StorageCluster status.</p>
+</div>
+<div class="paragraph">
+<p>First, setup the <code>PX_POD</code> environment variable:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">PX_POD=$(oc get pods -l name=portworx -n portworx -o jsonpath='{.items[0].metadata.name}')</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Next, use <code>oc</code> to execute <code>sudo pxctl status</code> within a pod defined by
+the <code>PX_POD</code> environment variable to check the Portworx StorageCluster
+status:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc exec -it $PX_POD -n portworx -- /opt/pwx/bin/pxctl status --color</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We now have a 3-node Portworx cluster up and running!</p>
+</div>
+<div class="paragraph">
+<p>Let’s dive into our cluster status: - All 3 nodes are online and use
+Kubernetes node names as the Portworx node IDs.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Portworx detected the block device media type as
+``STORAGE_MEDIUM_MAGNETIC'', and created a storage pool for those disks.
+If you have different types of disk, for example SSD and
+magnetic/rotational disk, a dedicated storage pool would be created for
+each type of device.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To make things easier throughout the lab, let’s set a bash alias for
+pxctl:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">echo "alias pxctl='PX_POD=\$(oc get pods -l name=portworx -n portworx --field-selector=status.phase==Running | grep \"1/1\" | awk \"NR==1{print \$1}\") &amp;&amp; oc exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl'" &gt;&gt; /root/.profile
+source /root/.profile</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now test out the alias:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">pxctl status --color</code></pre>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_2_deploy_a_virtual_machine_using_the_openshift_console"><a class="anchor" href="#_step_2_deploy_a_virtual_machine_using_the_openshift_console"></a>Step 2 - Deploy a Virtual Machine using the Openshift Console</h2>
+<h2 id="_storage_classes_and_storage_profiles_in_openshift"><a class="anchor" href="#_storage_classes_and_storage_profiles_in_openshift"></a>Storage Classes and Storage Profiles in Openshift</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Start by logging in to the OpenShift console with the information above.</p>
+<p>Storage Classes are a Kubernetes concept that allows an administrator
+to describe <em>classes</em> of storage they offer. Storage Classes are
+unopinionated about what the class represents, but it may include things
+such as: quality-of-service levels, backup policies, or snapshot
+policies.</p>
+</div>
+<div class="paragraph">
+<p>Portworx storage classes offer a number of configuration parameters that
+can be used to configure the amount of replicas, or encryption-at-rest
+configurations.</p>
+</div>
+<div class="paragraph">
+<p>Storage Classes are not specific to Openshift or Virtualization, but we
+still need a storage class to provision virtual machine disks.</p>
 </div>
 <div class="sect2">
-<h3 id="_task_1_create_a_new_vm"><a class="anchor" href="#_task_1_create_a_new_vm"></a>Task 1: Create a new VM</h3>
+<h3 id="_task_1_view_existing_storage_classes"><a class="anchor" href="#_task_1_view_existing_storage_classes"></a>Task 1: View existing storage classes</h3>
 <div class="paragraph">
-<p>Navigate to the virtualzation &gt; overview menu</p>
+<p>Portworx deploys serveral pre-configured storage classes when the
+storage cluster was created. These storage classes offer a veriety of
+configuration options. To view the current storage classes run:</p>
 </div>
-<div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-01.png" alt="Select VMs"></span></p>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get sc</code></pre>
 </div>
-<div class="paragraph">
-<p>Click the <code>Create Virtual Machine</code> button</p>
-</div>
-<div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-02.png" alt="Click Button"></span></p>
 </div>
 <div class="paragraph">
-<p>Select the Centos Stream image. We can also use the default instance
-type.</p>
+<p>Portworx offers Kubernetes in-tree and CSI provisioners. Storage Classes
+that contain the <code>-csi-</code> string.</p>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-03-2.png" alt="Select CentOS"></span></p>
+<p>Let&#8217;s look at the configuration of an example storage class:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get sc px-csi-db -o yaml</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>Verify that our StorageClass is set to <code>px-csi-db</code> and click
-<code>Create VirtualMachine</code></p>
+<p>We can see in the terminal output a list of parameters. This isn’t
+exactly what we want for our new virtual machines, so let’s create a new
+storage class.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_task_2_create_a_new_storage_class_for_vms"><a class="anchor" href="#_task_2_create_a_new_storage_class_for_vms"></a>Task 2: Create a new storage class for VMs</h3>
+<div class="paragraph">
+<p>Run the following command to create a new yaml file for the block-based
+StorageClass configuration:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cat &lt;&lt; EOF |oc apply -f -
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: px-csi-vm
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+parameters:
+  repl: "3"
+  sharedv4: "true"
+  sharedv4_svc_type: "ClusterIP"
+  sharedv4_mount_options: vers=3.0,nolock
+provisioner: pxd.portworx.com
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+EOF</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-04.png" alt="Select StorageClass"></span></p>
+<p>PVCs provisioned using the above StorageClass will have a replication
+factor of 3, which means there will be three replicas of the PVC spread
+across the OpenShift worker nodes.</p>
 </div>
 <div class="paragraph">
-<p>This will automatically start the virtual machine after a short
-provisioning process.</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p>It can take a couple of minutes for our VM to boot the
-first time</p>
-</div>
-</blockquote>
+<p>We have also set some configuration options on how RWX volumes should
+work. We specified the service type to <code>ClusterIP</code> which uses a cluster
+IP as the endpoint of NFS, and set some mount options.</p>
 </div>
 <div class="paragraph">
-<p>Explore the tabs for this virtual machine. We can view metrics,
-configure snapshots, and even view the YAML configuration to make
-automating easy.</p>
+<p>We also specified that the volumeBindingMode should be
+<code>WaitForFirstConsumer</code> to allow Portworx to intelligently place the
+volume.</p>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="_images/create-vm-06.png" alt="Interact with VM"></span></p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p>The Virtual Machine name will be different in your
-environment</p>
-</div>
-</blockquote>
+<p>See the
+<a href="https://docs.portworx.com/portworx-enterprise/3.1/platform/openshift/ocp-bare-metal/operations/storage-operations/manage-kubevirt-vms)" target="_blank" rel="noopener">Portworx
+Documentation</a> for further details.</p>
 </div>
 <div class="paragraph">
-<p>Click <code>Next</code> to move on to the next challenge</p>
+<p>Also note that the <code>provisioner</code> is set to <code>pxd.portworx.com</code>. This
+means that our storage class will be using CSI rather than the in-tree
+provisioner.</p>
+</div>
+<div class="paragraph">
+<p>With our StorageClass created, we can now create move on to Storage
+Profiles.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_task_3_configure_the_storage_profile"><a class="anchor" href="#_task_3_configure_the_storage_profile"></a>Task 3: Configure the Storage Profile</h3>
+<div class="paragraph">
+<p>Storage Profiles provide recommended storage settings based on an
+associate storage class. Storage profiles are automatically created in
+Openshift when a new storage class is created.</p>
+</div>
+<div class="paragraph">
+<p>Portworx sets desired parameters when using the CSI provider, including
+the prefered access mode.</p>
+</div>
+<div class="paragraph">
+<p>We can see the current configuration of our new storage profile by
+running:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get storageprofile px-csi-vm-example -o yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can see under the <code>.status</code> node a list of access modes. The first
+access mode: RWX in filesystem mode will be prefered.</p>
+</div>
+<div class="paragraph">
+<p>For further details on storage clusters, see the
+<a href="https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)" target="_blank" rel="noopener">Openshift
+documentation</a>.</p>
+</div>
+<div class="paragraph">
+<p>We can now create virtual machines using our new storage profile!</p>
 </div>
 </div>
 </div>
 </div>
 <nav class="pagination">
-  <span class="prev"><a href="pxe-osv-00.html" class="query-params-link">0. Create a Storage Class</a></span>
-  <span class="next"><a href="pxe-osv-02.html" class="query-params-link">2. Live Migrations and HA</a></span>
+  <span class="prev"><a href="index.html" class="query-params-link">Using Portworx with OpenShift Virtualization</a></span>
+  <span class="next"><a href="pxe-osv-02.html" class="query-params-link">2. Create a new VM</a></span>
 </nav>
 </article>
 <aside class="toc sidebar" data-title="Contents" data-levels="2">

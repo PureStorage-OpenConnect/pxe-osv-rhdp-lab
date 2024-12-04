@@ -1,0 +1,273 @@
+== Scenario - Automatic storage management with Autopilot
+
+In this scerario, we will configure autopilot to grow a PVC in the event
+of our virtual disk runs low on space.
+
+== Configure our Autopilot Rule
+
+=== Task 1: Create a new VM for Autopilot
+
+Let's create a new VM to test out autopilot. This VM will have an additional data disk. We will mount
+this disk and start filling it up with space.
+
+[source,sh,role=execute]
+----
+cat << EOF | oc apply -f
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authorized-keys
+data:
+  key: $(cat ~/.ssh/id_rsa.pub | base64 -w0)
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  creationTimestamp: null
+  name: centos-stream9-autopilot
+spec:
+  dataVolumeTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: centos-stream9-autopilot-ds-centos-stream9
+      annotations:
+        cdi.kubevirt.io/storage.usePopulator: "false"
+    spec:
+      sourceRef:
+        kind: DataSource
+        name: centos-stream9
+        namespace: openshift-virtualization-os-images
+      storage:
+        storageClassName: px-csi-vm
+        resources: {}
+  - metadata:
+      creationTimestamp: null
+      name: centos-stream9-autopilot-data-disk
+      annotations:
+        cdi.kubevirt.io/storage.usePopulator: "false"
+      labels:
+        app: autopilot
+    spec:
+      preallocation: false
+      source:
+        blank: {}
+      storage:
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: px-csi-vm
+  instancetype:
+    name: u1.medium
+  preference:
+    name: centos.stream9
+  runStrategy: Always
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      domain:
+        devices: {}
+        resources: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - dataVolume:
+          name: centos-stream9-autopilot-ds-centos-stream9
+        name: centos-stream9-autopilot-ds-centos-stream9
+      - cloudInitNoCloud: 
+          userData: |-
+            #cloud-config
+            user: cloud-user
+        name: cloudinitdisk
+      - dataVolume:
+          name: centos-stream9-autopilot-data-disk
+        name: centos-stream9-autopilot-data-disk
+      accessCredentials:
+        - sshPublicKey:
+            propagationMethod:
+              noCloud: {}
+            source:
+              secret:
+                secretName: authorized-keys 
+EOF
+----
+
+=== Task 1: Create the Autopilot Rule
+
+create the Autopilot rule by running the following
+
+[source,sh,role=execute]
+----
+cat << EOF | oc apply -f -
+apiVersion: autopilot.libopenstorage.org/v1alpha1
+kind: AutopilotRule
+metadata:
+ name: volume-resize
+spec:
+  ##### selector filters the objects affected by this rule given labels
+  selector:
+    matchLabels:
+      app: disk-filler
+  ##### namespaceSelector selects the namespaces of the objects affected by this rule
+  namespaceSelector:
+    matchLabels:
+      type: db
+  ##### conditions are the symptoms to evaluate. All conditions are AND'ed
+  conditions:
+    # volume usage should be less than 30%
+    expressions:
+    - key: "100 * (px_volume_usage_bytes / px_volume_capacity_bytes)"
+      operator: Gt
+      values:
+        - "30"
+    for: 5
+  ##### action to perform when condition is true
+  actions:
+  - name: openstorage.io.action.volume/resize
+    params:
+      # resize volume by scalepercentage of current size
+      scalepercentage: "100"
+      # volume capacity should not exceed 20GiB
+      maxsize: "20Gi"
+EOF
+----
+
+The rule will:
+
+* *_Line 9:_* Target PVCs with the Kubernetes label `app: autopilot`
+* *_Lines 14-17:_* Monitor if capacity usage grows to or above 30%
+* *_Line 24:_* Automatically grow the volume and underlying filesystem by 50% of the current volume size if usage above 30% is detected
+* *_Line 26:_* Not grow the volume to more than 20Gi
+
+
+=== Task 2: Label our Virtual Machine PVC
+
+Autopilot will expand PVCs that have the `app: autopilot` label applied.
+We will apply that label to our virtual machine’s PVC’
+
+[source,sh,role=execute]
+----
+oc label pvc centos-stream9-autopilot-data-disk  app=autopilot --overwrite
+----
+
+[source,sh,role=execute]
+----
+oc get pvc centos-stream9-autopilot-data-disk 
+----
+
+____
+Take note of the size of our pvc!
+____
+
+=== Task 3: Format and mount our data disk
+
+Because this is a new VM, let's format our data bisk and mount it to `/data`
+
+[source,sh,role=execute]
+----
+# Wait for the VM to boot
+
+until virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c 'lsblk'; do
+    echo "waiting for VM to boot"
+    sleep 10
+done
+
+virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdc && sudo mkfs.ext4 /dev/vdc1 && sudo mkdir /data && sudo mount /dev/vdc1 /data'
+----
+
+== Step 3 - Add some storage space
+
+We will use the shred command to add some storage space to our virtual
+machine.
+
+We could of course log in to our VM though the console, but that would
+require that we log in to the virtual machine with the supplied
+password.
+
+One of the advantages of an extensible framework like Openshift is that
+much of the information about our environment is stored as metadata.
+
+=== Task 1: Start filling the disk
+
+Let’s execute a command inside of our virtual machinen using `oc exec`
+
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c 'sudo touch /data/file; sudo shred -n 1 -s 900M /data/file'&
+----
+
+=== Task 5: Observe the Portworx Autopilot events
+
+Run the following command to observe the state changes for Portworx
+Autopilot:
+
+[source,sh,role=execute]
+----
+watch oc get events --field-selector \
+ involvedObject.kind=AutopilotRule,involvedObject.name=volume-resize \
+ --all-namespaces --sort-by .lastTimestamp -o custom-columns=MESSAGE:.message
+----
+
+You will see Portworx Autopilot move through the following states as it
+monitors volumes and takes actions defined in Portworx Autopilot rules:
+- *_Initializing_* (Detected a volume to monitor via applied rule
+conditions)
+
+* *_Normal_* (Volume is within defined conditions and no action is
+necessary)
+* *_Triggered_* (Volume is no longer within defined conditions and
+action is necessary)
+* *_ActiveActionsPending_* (Corrective action is necessary but not
+executed yet)
+* *_ActiveActionsInProgress_* (Corrective action is under execution)
+* *_ActiveActionsTaken_* (Corrective action is complete)
+
+Once you see ActiveActionsTaken in the event output, press `CTRL+C` to
+exit the watch command.
+
+=== Task 6: Verify the Volume Expansion
+
+Now let’s take a look at our PVC - note the automatic expansion of the
+volume occurred with no human interaction and no application
+interruption:
+
+[source,bash]
+----
+oc get pvc
+----
+
+____
+[!IMPORTANT] You should now see the data volume size has now increased
+by 100%.
+____
+
+Let's expand the virtual machine's filesystem:
+
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c 'yes Fix | sudo parted --script --fix /dev/vdc print ; yes | sudo parted ---pretend-input-tty /dev/vdc resizepart 1 100% ; sudo resize2fs /dev/vdc1'
+----
+
+
+We can now observe the freespace in our virtual machine by running:
+
+[source,sh,role=execute]
+----
+virtctl ssh cloud-user@centos-stream9-autopilot -t "-o StrictHostKeyChecking=no" -c 'df -h'
+----
+
+Notice the size of the data disk at mounted at `/data`
+
+You’ve just configured Portworx Autopilot and observed how it can
+perform automated capacity management based on rules you configure, and
+be able to ``right size'' your underlying persistent storage as it is
+needed!
+
+
+
+=== Useful links:
+
+https://docs.portworx.com/portworx-enterprise/operations/operate-kubernetes/storage-operations/manage-kubevirt-vms.html
+
+https://docs.openshift.com/dedicated/virt/virtual_machines/virtual_disks/virt-expanding-vm-disks.html
+
+https://kubevirt.io/user-guide/storage/disks_and_volumes/#disk-expansion
