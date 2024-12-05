@@ -94,6 +94,8 @@ Once the VM is running we can log into this VM using this command (if you do so 
 [TIP]
 
 It can take a couple of minutes for the VM to provision and start.
+====
+
 
 [source,sh,role=execute]
 ----
