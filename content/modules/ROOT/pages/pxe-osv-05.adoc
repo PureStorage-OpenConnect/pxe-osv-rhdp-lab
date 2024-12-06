@@ -161,7 +161,7 @@ until virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o St
     sleep 10
 done
 
-virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdc && sudo mkfs.ext4 /dev/vdc1 && sudo mkdir /data && sudo mount /dev/vdc1 /data'
+virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdb && sudo mkfs.ext4 /dev/vdb1 && sudo mkdir /data && sudo mount /dev/vdb1 /data'
 ----
 
 == Task 5: Add some storage space
