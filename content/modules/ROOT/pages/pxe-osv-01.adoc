@@ -115,6 +115,13 @@ watch oc -n portworx get pods
 When all three of the `px-cluster` pods have a Ready status of `1/1` we
 can press `ctrl-c` to exit out of our watch command.
 
+====
+[NOTE]
+
+The Portworx cluster pods can take up to 10 minutes to start. During this time, you will see pods restart. 
+This is expected behavior.
+====
+
 === Task: Check the Portworx cluster status
 
 Portworx ships with a `pxctl` CLI utility that you can use for managing
@@ -311,6 +318,14 @@ spec:
     global: "0.08" 
 EOF
 ----
+
+The installation can take a few moments. Verify that the HyperConverged object is running by monitoring the 
+pods in the `openshift-cnv` project:
+
+[source,sh,role=execute]
+----
+watch oc -n openshift-cnv get pods
+````
 
 
 ====
