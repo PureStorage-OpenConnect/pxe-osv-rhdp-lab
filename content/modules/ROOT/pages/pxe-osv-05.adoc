@@ -188,24 +188,24 @@ Run the following command to observe the state changes for Portworx Autopilot:
 [source,sh,role=execute]
 ----
 watch oc get events --field-selector \
- involvedObject.kind=AutopilotRule,involvedObject.name=volume-resize \
- --all-namespaces --sort-by .lastTimestamp -o custom-columns=MESSAGE:.message
+  involvedObject.kind=AutopilotRule,involvedObject.name=volume-resize \
+  --all-namespaces --sort-by .lastTimestamp -o custom-columns=MESSAGE:.message
 ----
 
 You will see Portworx Autopilot move through the following states as it monitors volumes and takes actions defined in Portworx Autopilot rules:
 
-* *_Initializing_* (Detected a volume to monitor via applied rule
-conditions)
-* *_Normal_* (Volume is within defined conditions and no action is
-necessary)
-* *_Triggered_* (Volume is no longer within defined conditions and
-action is necessary)
-* *_ActiveActionsPending_* (Corrective action is necessary but not
-executed yet)
-* *_ActiveActionsInProgress_* (Corrective action is under execution)
-* *_ActiveActionsTaken_* (Corrective action is complete)
+* *_Initializing_*: Detected a volume to monitor via applied rule
+conditions
+* *_Normal_*: Volume is within defined conditions and no action is
+necessary
+* *_Triggered_*: Volume is no longer within defined conditions and
+action is necessary
+* *_ActiveActionsPending_*: Corrective action is necessary but not
+executed yet
+* *_ActiveActionsInProgress_*: Corrective action is under execution
+* *_ActiveActionsTaken_*: Corrective action is complete
 
-Once you see ActiveActionsTaken in the event output, press `CTRL+C` to exit the watch command.
+Once you see `ActiveActionsTaken` in the event output, press `CTRL+C` to exit the watch command.
 
 === Task 6: Verify the Volume Expansion
 
