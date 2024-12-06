@@ -89,10 +89,10 @@ Take a look at our current manifest by using the cat utility:
 cat px-spec.yaml
 ----
 
-* Lines 14-16 contain our disk configuration. These disks will be
-created and attached as part of the Portworx installation.
-* Lines 35-37 contain a reference to our OpenShift secret that we will
-use to provision the above disk specification.
+* Line 9 tells Portworx that we are installing on an Openshift cluster
+* Line 11 contains the Portworx image we are using. Upgrading Portworx is as easy as changing this line.
+* Lines 15-17 contain our disk configuration. These disks will be created and attached as part of the Portworx installation.
+* The rest of the file contains various features that we want to enable in Portworx
 
 Additional documentation can be found
 https://docs.portworx.com/portworx-enterprise/platform/openshift/ocp-gcp/install-on-ocp-gcp[here]
