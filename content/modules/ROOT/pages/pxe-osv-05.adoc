@@ -137,7 +137,7 @@ We will apply that label to our virtual machine's PVC.
 
 [source,sh,role=execute]
 ----
-oc label pvc centos-stream9-autopilot-data-disk  app=autopilot --overwrite
+oc label pvc centos-stream9-autopilot-data-disk app=autopilot --overwrite
 ----
 
 [source,sh,role=execute]
