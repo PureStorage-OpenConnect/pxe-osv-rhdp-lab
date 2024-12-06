@@ -272,29 +272,6 @@ provisioner.
 With our StorageClass created, we can now create move on to Storage
 Profiles.
 
-=== Task 3: Configure the Storage Profile
-
-Storage Profiles provide recommended storage settings based on an
-associate storage class. Storage profiles are automatically created in
-Openshift when a new storage class is created.
-
-Portworx sets desired parameters when using the CSI provider, including
-the prefered access mode.
-
-We can see the current configuration of our new storage profile by
-running:
-
-[source,sh,role=execute]
-----
-oc get storageprofile px-csi-vm -o yaml
-----
-
-We can see under the `.status` node a list of access modes. The first
-access mode: RWX in filesystem mode will be prefered.
-
-For further details on storage clusters, see the
-https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)[Openshift
-documentation^].
 
 
 == Install and Configure Openshift Virtualization
@@ -307,7 +284,7 @@ We can install the HyperConverged CR using the following command:
 
 [source,sh,role=execute]
 ----
-cat << EOF > ocp-osv-obj.yaml
+cat << EOF | oc apply -f -
 apiVersion: hco.kubevirt.io/v1beta1
 kind: HyperConverged
 metadata:
@@ -348,5 +325,30 @@ tar -xvf virtctl.tar.gz
 chmod +x virtctl
 sudo mv virtctl /usr/local/bin
 ----
+
+=== Task: View the Storage Profile
+
+Storage Profiles provide recommended storage settings based on an
+associate storage class. Storage profiles are automatically created in
+Openshift when a new storage class is created.
+
+Portworx sets desired parameters when using the CSI provider, including
+the prefered access mode.
+
+We can see the current configuration of our new storage profile by
+running:
+
+[source,sh,role=execute]
+----
+oc get storageprofile px-csi-vm -o yaml
+----
+
+We can see under the `.status` node a list of access modes. The first
+access mode: RWX in filesystem mode will be prefered.
+
+For further details on storage clusters, see the
+https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)[Openshift
+documentation^].
+
 
 With Portworx and OSV installed, we are now ready to move on to the next lesson.
