@@ -183,7 +183,7 @@ configurations.
 Storage Classes are not specific to Openshift or Virtualization, but we
 still need a storage class to provision virtual machine disks.
 
-=== Task 1: View existing storage classes
+=== Task: View existing storage classes
 
 Portworx deploys serveral pre-configured storage classes when the
 storage cluster was created. These storage classes offer a veriety of
@@ -208,7 +208,7 @@ We can see in the terminal output a list of parameters. This isn’t
 exactly what we want for our new virtual machines, so let’s create a new
 storage class.
 
-=== Task 2: Create a new storage class for VMs
+=== Task: Create a new storage class for VMs
 
 First, let's set the `gp3-csi` StorageClass to no longer be the default:
 
@@ -289,4 +289,93 @@ For further details on storage clusters, see the
 https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)[Openshift
 documentation^].
 
-We can now create virtual machines using our new storage profile!
+
+== Install and Configure Openshift Virtualization
+
+
+=== Task: Install the Kubevirt Hyperconverged Operator 
+
+
+We can install the namespace, OperatorGroup and Subscription using the following command:
+
+[source,sh,role=execute]
+----
+cat << EOF | oc apply -f -
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-cnv
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: kubevirt-hyperconverged-group
+  namespace: openshift-cnv
+spec:
+  targetNamespaces:
+    - openshift-cnv
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: hco-operatorhub
+  namespace: openshift-cnv
+spec:
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  name: kubevirt-hyperconverged
+  startingCSV: kubevirt-hyperconverged-operator.v4.16.2
+  channel: "stable" 
+  config:
+    env:
+    - name: KVM_EMULATION
+      value: "true"
+EOF
+----
+
+The operator can take a few moments to install
+
+
+=== Task: Install the HyperConverged CR
+
+
+We can install the HyperConverged CR using the following command:
+
+[source,sh,role=execute]
+----
+cat << EOF > ocp-osv-obj.yaml
+apiVersion: hco.kubevirt.io/v1beta1
+kind: HyperConverged
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: openshift-cnv
+spec:
+  filesystemOverhead:
+    global: "0.08" 
+EOF
+----
+
+
+====
+[NOTE]
+
+It is possible to install the Operator and HyperConverged object using the Openshift UI. We have opted to use
+the CLI to make the process more repeatable
+====
+
+=== Task: Install Virtctl
+
+Many functions we will use rely on a utility called `virtctl`. Virtctl allows us to interface with our virtual 
+machine through the control plane of Openshift. This means that we will not have to configure Openshift Networking 
+to interact with our virtual machines.
+
+[source,sh,role=execute]
+----
+wget $(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged  -o json | jq -r '.spec.links[] | select(.text == "Download virtctl for Linux for x86_64") | .href')
+tar -xvf virtctl.tar.gz
+chmod +x virtctl
+sudo mv virtctl /usr/local/bin
+----
+
+With Portworx and OSV installed, we are now ready to move on to the next lesson.

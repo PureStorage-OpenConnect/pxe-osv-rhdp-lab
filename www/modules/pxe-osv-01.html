@@ -6,7 +6,7 @@
     <title>Untitled :: Using Portworx with OpenShift Virtualization</title>
     <link rel="prev" href="index.html">
     <link rel="next" href="pxe-osv-02.html">
-    <meta name="generator" content="Antora 3.1.9">
+    <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../_/css/site.css">
 <link rel="icon" href="../_/img/favicon.ico" type="image/x-icon">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -206,35 +206,11 @@ instead, click <code>View installed Operators in Namespace portworx</code></p>
 Instruqt interface.</p>
 </div>
 <div class="paragraph">
-<p>Installing the the Portworx StorageCluster requires a few steps. We need
-to ensure that we have a service account secret for our gcloud
-environment to create and manage disks. Portworx will create and expand
-GCP disks based on our specifications.</p>
-</div>
-<div class="paragraph">
-<p>Create this secret by running:</p>
+<p>Grab our StorageCluster specification:</p>
 </div>
 <div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">echo $INSTRUQT_GCP_PROJECT_GCPPROJECT_SERVICE_ACCOUNT_KEY | base64 -d &gt; gcloud.json
-oc -n portworx create secret generic px-gcloud --from-file=gcloud.json</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>We can now grab our StorageCluster specification:</p>
-</div>
-<div class="listingblock execute">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">curl -o px-spec.yaml "https://install.portworx.com/3.1?operator=true&amp;mc=false&amp;kbver=1.29.8&amp;ns=portworx&amp;b=true&amp;iop=6&amp;s=%22type%3Dpd-standard%2Csize%3D50%22&amp;ce=gce&amp;r=17001&amp;c=px-cluster&amp;osft=true&amp;stork=true&amp;csi=true&amp;mon=true&amp;tel=false&amp;st=k8s&amp;promop=true"</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>We now need to insert a reference for our secret in to our
-StorageCluster specification. This can be done with a little <code>yq</code> magic:</p>
-</div>
-<div class="listingblock execute">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">yq -iy '.spec.volumes += [{"name": "gcloud", "mountPath": "/etc/pwx/gce", "secret": {"secretName": "px-gcloud"}}] | .spec.env += [{"name": "GOOGLE_APPLICATION_CREDENTIALS", "value": "/etc/pwx/gce/gcloud.json"}]' px-spec.yaml</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">curl -o px-spec.yaml 'https://install.portworx.com/3.1?operator=true&amp;mc=false&amp;kbver=1.29.10&amp;ns=portworx&amp;b=true&amp;iop=6&amp;s=%22type%3Dgp3%2Csize%3D50%22%2C%22&amp;ce=aws&amp;r=17001&amp;c=px-cluster-443e64d8-f2c7-47d2-b81b-295567465a84&amp;osft=true&amp;stork=true&amp;csi=true&amp;tel=false&amp;st=k8s'</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -336,8 +312,8 @@ pxctl:</p>
 </div>
 <div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">echo "alias pxctl='PX_POD=\$(oc get pods -l name=portworx -n portworx --field-selector=status.phase==Running | grep \"1/1\" | awk \"NR==1{print \$1}\") &amp;&amp; oc exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl'" &gt;&gt; /root/.profile
-source /root/.profile</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">echo "alias pxctl='PX_POD=\$(oc get pods -l name=portworx -n portworx --field-selector=status.phase==Running | grep \"1/1\" | awk \"NR==1{print \$1}\") &amp;&amp; oc exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl'" &gt;&gt; ~/.bashrc
+source ~/.bashrc</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -371,7 +347,7 @@ configurations.</p>
 still need a storage class to provision virtual machine disks.</p>
 </div>
 <div class="sect2">
-<h3 id="_task_1_view_existing_storage_classes"><a class="anchor" href="#_task_1_view_existing_storage_classes"></a>Task 1: View existing storage classes</h3>
+<h3 id="_task_view_existing_storage_classes"><a class="anchor" href="#_task_view_existing_storage_classes"></a>Task: View existing storage classes</h3>
 <div class="paragraph">
 <p>Portworx deploys serveral pre-configured storage classes when the
 storage cluster was created. These storage classes offer a veriety of
@@ -401,7 +377,15 @@ storage class.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_task_2_create_a_new_storage_class_for_vms"><a class="anchor" href="#_task_2_create_a_new_storage_class_for_vms"></a>Task 2: Create a new storage class for VMs</h3>
+<h3 id="_task_create_a_new_storage_class_for_vms"><a class="anchor" href="#_task_create_a_new_storage_class_for_vms"></a>Task: Create a new storage class for VMs</h3>
+<div class="paragraph">
+<p>First, let&#8217;s set the <code>gp3-csi</code> StorageClass to no longer be the default:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc patch storageclass gp3-csi -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'</code></pre>
+</div>
+</div>
 <div class="paragraph">
 <p>Run the following command to create a new yaml file for the block-based
 StorageClass configuration:</p>
@@ -475,7 +459,7 @@ running:</p>
 </div>
 <div class="listingblock execute">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get storageprofile px-csi-vm-example -o yaml</code></pre>
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">oc get storageprofile px-csi-vm -o yaml</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -487,8 +471,108 @@ access mode: RWX in filesystem mode will be prefered.</p>
 <a href="https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)" target="_blank" rel="noopener">Openshift
 documentation</a>.</p>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_install_and_configure_openshift_virtualization"><a class="anchor" href="#_install_and_configure_openshift_virtualization"></a>Install and Configure Openshift Virtualization</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_task_install_the_kubevirt_hyperconverged_operator"><a class="anchor" href="#_task_install_the_kubevirt_hyperconverged_operator"></a>Task: Install the Kubevirt Hyperconverged Operator</h3>
 <div class="paragraph">
-<p>We can now create virtual machines using our new storage profile!</p>
+<p>We can install the namespace, OperatorGroup and Subscription using the following command:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cat &lt;&lt; EOF | oc apply -f -
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-cnv
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: kubevirt-hyperconverged-group
+  namespace: openshift-cnv
+spec:
+  targetNamespaces:
+    - openshift-cnv
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: hco-operatorhub
+  namespace: openshift-cnv
+spec:
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  name: kubevirt-hyperconverged
+  startingCSV: kubevirt-hyperconverged-operator.v4.16.2
+  channel: "stable"
+  config:
+    env:
+    - name: KVM_EMULATION
+      value: "true"
+EOF</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The operator can take a few moments to install</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_task_install_the_hyperconverged_cr"><a class="anchor" href="#_task_install_the_hyperconverged_cr"></a>Task: Install the HyperConverged CR</h3>
+<div class="paragraph">
+<p>We can install the HyperConverged CR using the following command:</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">cat &lt;&lt; EOF &gt; ocp-osv-obj.yaml
+apiVersion: hco.kubevirt.io/v1beta1
+kind: HyperConverged
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: openshift-cnv
+spec:
+  filesystemOverhead:
+    global: "0.08"
+EOF</code></pre>
+</div>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+It is possible to install the Operator and HyperConverged object using the Openshift UI. We have opted to use
+the CLI to make the process more repeatable
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_task_install_virtctl"><a class="anchor" href="#_task_install_virtctl"></a>Task: Install Virtctl</h3>
+<div class="paragraph">
+<p>Many functions we will use rely on a utility called <code>virtctl</code>. Virtctl allows us to interface with our virtual
+machine through the control plane of Openshift. This means that we will not have to configure Openshift Networking
+to interact with our virtual machines.</p>
+</div>
+<div class="listingblock execute">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">wget $(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged  -o json | jq -r '.spec.links[] | select(.text == "Download virtctl for Linux for x86_64") | .href')
+tar -xvf virtctl.tar.gz
+chmod +x virtctl
+sudo mv virtctl /usr/local/bin</code></pre>
+</div>
 </div>
 </div>
 </div>
