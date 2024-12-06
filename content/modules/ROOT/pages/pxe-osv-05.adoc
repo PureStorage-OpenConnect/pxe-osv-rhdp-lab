@@ -225,7 +225,9 @@ Let's expand the virtual machine's filesystem:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'yes Fix | sudo parted --script --fix /dev/vdc print ; yes | sudo parted ---pretend-input-tty /dev/vdc resizepart 1 100% ; sudo resize2fs /dev/vdc1'
+virtctl ssh cloud-user@centos-stream9-autopilot \
+  -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" \
+  -c 'yes Fix | sudo parted --script --fix /dev/vdb print ; yes | sudo parted ---pretend-input-tty /dev/vdb resizepart 1 100% ; sudo resize2fs /dev/vdb1'
 ----
 
 We can now observe the freespace in our virtual machine by running:
