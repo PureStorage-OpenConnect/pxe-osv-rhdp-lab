@@ -302,7 +302,7 @@ pods in the `openshift-cnv` project:
 [source,sh,role=execute]
 ----
 watch oc -n openshift-cnv get pods
-````
+----
 
 
 ====
