@@ -79,7 +79,7 @@ Grab our StorageCluster specification:
 
 [source,sh,role=execute]
 ----
-curl -o px-spec.yaml 'https://install.portworx.com/3.1?operator=true&mc=false&kbver=1.29.10&ns=portworx&b=true&iop=6&s=%22type%3Dgp3%2Csize%3D50%22%2C%22&ce=aws&r=17001&c=px-cluster-443e64d8-f2c7-47d2-b81b-295567465a84&osft=true&stork=true&csi=true&tel=false&st=k8s'
+curl -o px-spec.yaml 'https://install.portworx.com/3.1.6?operator=true&mc=false&kbver=1.29.10&ns=portworx&b=true&iop=6&s=%22type%3Dgp3%2Csize%3D50%22%2C%22&ce=aws&r=17001&c=px-cluster-443e64d8-f2c7-47d2-b81b-295567465a84&osft=true&stork=true&csi=true&tel=false&st=k8s'
 ----
 
 Take a look at our current manifest by using the cat utility:

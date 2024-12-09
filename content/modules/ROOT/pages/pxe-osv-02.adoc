@@ -49,6 +49,8 @@ spec:
   dataVolumeTemplates:
   - metadata:
       name: centos-stream9-example-ds-centos-stream9
+      annotations:
+        cdi.kubevirt.io/storage.usePopulator: "false"
     spec:
       sourceRef:
         kind: DataSource
@@ -108,13 +110,17 @@ Start by logging in to the OpenShift console if you haven't already.
 
 === Task 1: Create a new VM
 
-Navigate to the virtualzation > overview menu
+Navigate to the Virtualzation > VirtualMachines menu
 
-image:create-vm-01.png[Select VMs]
+image:create-vm-11.png[Select VMs]
 
-Click the `Create Virtual Machine` button
+Select our `vmtest` project in the upper left of the interface
 
-image:create-vm-02.png[Click Button]
+image:create-vm-12.png[Select Project]
+
+Click the `Create` button, and then the `From instanceType` from the menu
+
+image:create-vm-13.png[Click Button]
 
 Select the Centos Stream image. We can also use the default instance
 type.
