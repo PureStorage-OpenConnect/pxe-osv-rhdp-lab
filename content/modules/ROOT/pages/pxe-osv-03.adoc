@@ -11,7 +11,7 @@ Let's write some data to a file:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'echo "Redhat was here" > ~/text'
+virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'echo "Red Hat was here" > ~/text'
 ----
 
 We can read our file at any time by running:
