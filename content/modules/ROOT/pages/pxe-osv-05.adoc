@@ -93,7 +93,6 @@ apiVersion: autopilot.libopenstorage.org/v1alpha1
 kind: AutopilotRule
 metadata:
  name: volume-resize
- namespace: vmtest
 spec:
   ##### selector filters the objects affected by this rule given labels
   selector:
@@ -137,7 +136,8 @@ We will apply that label to our virtual machine's PVC.
 
 [source,sh,role=execute]
 ----
-oc label pvc centos-stream9-autopilot-data-disk app=autopilot --overwrite
+oc label pvc centos-stream9-autopilot-data-disk \
+  app=autopilot --overwrite
 ----
 
 [source,sh,role=execute]
@@ -161,12 +161,16 @@ until virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o St
     sleep 10
 done
 
-virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdb && sudo mkfs.ext4 /dev/vdb1 && sudo mkdir /data && sudo mount /dev/vdb1 /data'
+# Set up the filesystem and mount the disk as /data
+virtctl ssh cloud-user@centos-stream9-autopilot \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdb && sudo mkfs.ext4 /dev/vdb1 && sudo mkdir /data && sudo mount /dev/vdb1 /data'
 ----
 
 == Task 5: Add some storage space
 
-We will use the shred command to add some storage space to our virtual machine.
+We will use the `shred` command to add some storage space to our virtual machine.
 
 We could of course log in to our VM though the console, but that would require that we log in to the virtual machine with the supplied password.
 
@@ -174,11 +178,14 @@ One of the advantages of an extensible framework like Openshift is that much of 
 
 === Task 6: Start filling the disk
 
-Let's execute a command inside of our virtual machinen using `oc exec`
+Let's execute a command to write data to the `/data` disk inside of our virtual machine:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'sudo touch /data/file; sudo shred -n 1 -s 900M /data/file'&
+virtctl ssh cloud-user@centos-stream9-autopilot \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'sudo touch /data/file; sudo shred -n 1 -s 990M /data/file'
 ----
 
 === Task 5: Observe the Portworx Autopilot events

@@ -11,14 +11,20 @@ Let's write some data to a file:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'echo "Red Hat was here" > ~/text'
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'echo "Red Hat was here" > ~/text'
 ----
 
 We can read our file at any time by running:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'cat ~/text'
 ----
 
 == Step 2 - Test Live Migrations
@@ -71,7 +77,10 @@ Let's check to make sure our data is still there:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'cat ~/text'
 ----
 
 == Step 3 - Providing HA
@@ -82,26 +91,27 @@ We will now induce a failure in our OpenShift cluster.
 
 It is important to understand that in OpenShift Virtualization,
 VirtualMachines run inside pods. As we learned above, our virtual
-machine is actually running from inside a pod. Let’s find out which node
+machine is actually running from inside a pod. Let's find out which node
 our virtual machine is running on:
 
 [source,sh,role=execute]
 ----
 NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
+
 echo "Your VM is running on node: ${NODENAME}"
 ----
 
-Let’s cause a reboot of this node. We will now debug the node:
+Let's cause a reboot of this node. We will now debug the node:
 
 [source,sh,role=execute]
 ----
 oc debug node/$NODENAME
 ----
 
-____
-Running `oc debug node/$NODENAME` can take a few seconds as
-a pod needs to be attached to the node.
-____
+====
+[NOTE]
+Running `oc debug node/$NODENAME` can take a few seconds as a pod needs to be attached to the node.
+====
 
 Chroot to the host
 
@@ -115,8 +125,15 @@ MongoDB pod:
 
 [source,sh,role=execute]
 ----
-sudo reboot
+reboot
 ----
+
+====
+[WARNING]
+It is possible that your `showroom` lab interface (where you are reading these instructions) happens to be running on the node that you just rebooted. In that case the terminal on the right will disconnect. You will need to refresh your window until OpenShift notices that the node is down and re-schedules the showroom pod to an available node.
+
+To speed up the re-creation of the pod you can also find the showroom pod in the showroom namespace and delete the currently running pod.
+====
 
 Let's watch our VM and pod status in the default namespace:
 
@@ -135,7 +152,10 @@ Let's check to make sure our data is still there:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'cat ~/text'
 ----
 
-You are ready to move to the next challenge.
+You are ready to move to the next lab.

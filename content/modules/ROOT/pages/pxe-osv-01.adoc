@@ -29,7 +29,7 @@ The username is `{openshift_cluster_admin_username}` and the password is `{opens
 Red Hat OpenShift uses the `oc` cli utility. This utility has a similar
 syntax to kubectl, but with some OpenShift specific extensions.
 
-Let’s look at the nodes that make up our cluster:
+Let's look at the nodes that make up our cluster:
 
 [source,sh,role=execute]
 ----
@@ -79,14 +79,14 @@ Grab our StorageCluster specification:
 
 [source,sh,role=execute]
 ----
-curl -o px-spec.yaml 'https://install.portworx.com/3.1.6?operator=true&mc=false&kbver=1.29.10&ns=portworx&b=true&iop=6&s=%22type%3Dgp3%2Csize%3D50%22%2C%22&ce=aws&r=17001&c=px-cluster-443e64d8-f2c7-47d2-b81b-295567465a84&osft=true&stork=true&csi=true&tel=false&st=k8s'
+curl -o $HOME/px-spec.yaml 'https://install.portworx.com/3.1.6?operator=true&mc=false&kbver=1.29.10&ns=portworx&b=true&iop=6&s=%22type%3Dgp3%2Csize%3D50%22%2C%22&ce=aws&r=17001&c=px-cluster-443e64d8-f2c7-47d2-b81b-295567465a84&osft=true&stork=true&csi=true&tel=false&st=k8s'
 ----
 
 Take a look at our current manifest by using the cat utility:
 
 [source,sh,role=execute]
 ----
-cat px-spec.yaml
+cat $HOME/px-spec.yaml
 ----
 
 * Line 9 tells Portworx that we are installing on an Openshift cluster
@@ -101,11 +101,17 @@ We can now apply the specification:
 
 [source,sh,role=execute]
 ----
-oc apply -f px-spec.yaml
+oc apply -f $HOME/px-spec.yaml
 ----
 
-The install can take about 5 minutes. We can watch the containers come
-up by running:
+====
+[NOTE]
+
+The Portworx cluster pods can take up to 10 minutes to start. During this time, you will see pods restart.
+This is expected behavior.
+====
+
+We can watch the containers come up by running:
 
 [source,sh,role=execute]
 ----
@@ -115,20 +121,13 @@ watch oc -n portworx get pods
 When all three of the `px-cluster` pods have a Ready status of `1/1` we
 can press `ctrl-c` to exit out of our watch command.
 
-====
-[NOTE]
-
-The Portworx cluster pods can take up to 10 minutes to start. During this time, you will see pods restart. 
-This is expected behavior.
-====
-
 === Task: Check the Portworx cluster status
 
 Portworx ships with a `pxctl` CLI utility that you can use for managing
-Portworx. We’ll cover this utility more in the labs here in a little
+Portworx. We'll cover this utility more in the labs here in a little
 bit!
 
-For now, we’ll run `sudo pxctl status` via `oc` in one of the Portworx
+For now, we'll run `sudo pxctl status` via `oc` in one of the Portworx
 pods to check the StorageCluster status.
 
 First, setup the `PX_POD` environment variable:
@@ -149,7 +148,7 @@ oc exec -it $PX_POD -n portworx -- /opt/pwx/bin/pxctl status --color
 
 We now have a 3-node Portworx cluster up and running!
 
-Let’s dive into our cluster status: - All 3 nodes are online and use
+Let's dive into our cluster status: - All 3 nodes are online and use
 Kubernetes node names as the Portworx node IDs.
 
 * Portworx detected the block device media type as
@@ -164,6 +163,7 @@ pxctl:
 [source,sh,role=execute]
 ----
 echo "alias pxctl='PX_POD=\$(oc get pods -l name=portworx -n portworx --field-selector=status.phase==Running | grep \"1/1\" | awk \"NR==1{print \$1}\") && oc exec \$PX_POD -n portworx -- /opt/pwx/bin/pxctl'" >> ~/.bashrc
+
 source ~/.bashrc
 ----
 
@@ -173,7 +173,6 @@ Now test out the alias:
 ----
 pxctl status --color
 ----
-
 
 == Storage Classes and Storage Profiles in Openshift
 
@@ -221,7 +220,8 @@ First, let's set the `gp3-csi` StorageClass to no longer be the default:
 
 [source,sh,role=execute]
 ----
-oc patch storageclass gp3-csi -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+oc patch storageclass gp3-csi \
+  -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 ----
 
 Run the following command to create a new yaml file for the block-based
@@ -262,8 +262,7 @@ We also specified that the volumeBindingMode should be
 volume.
 
 See the
-https://docs.portworx.com/portworx-enterprise/3.1/platform/openshift/ocp-bare-metal/operations/storage-operations/manage-kubevirt-vms)[Portworx
-Documentation^] for further details.
+https://docs.portworx.com/portworx-enterprise/3.1/platform/openshift/ocp-bare-metal/operations/storage-operations/manage-kubevirt-vms)[Portworx Documentation^] for further details.
 
 Also note that the `provisioner` is set to `pxd.portworx.com`. This
 means that our storage class will be using CSI rather than the in-tree
@@ -272,19 +271,18 @@ provisioner.
 With our StorageClass created, we can now create move on to Storage
 Profiles.
 
-
-
 == Install and Configure Openshift Virtualization
-
 
 === Task: Install the HyperConverged CR
 
+The OpenShift Virtualization operator has already been installed for out environment. Now that the Portworx StorageCluster has been deployed and we have created the default storage class we can create the `HyperConverged` object that actually deploys OpenShift Virtualization to our cluster.
 
 We can install the HyperConverged CR using the following command:
 
 [source,sh,role=execute]
 ----
 cat << EOF | oc apply -f -
+---
 apiVersion: hco.kubevirt.io/v1beta1
 kind: HyperConverged
 metadata:
@@ -292,35 +290,35 @@ metadata:
   namespace: openshift-cnv
 spec:
   filesystemOverhead:
-    global: "0.08" 
+    global: "0.08"
 EOF
 ----
 
-The installation can take a few moments. Verify that the HyperConverged object is running by monitoring the 
-pods in the `openshift-cnv` project:
+The installation can take a few moments. Verify that the HyperConverged object is running by monitoring the
+pods in the `openshift-cnv` project until all pods show in `Running` state and no new pods appear:
 
 [source,sh,role=execute]
 ----
 watch oc -n openshift-cnv get pods
 ----
 
-
 ====
 [NOTE]
 
-It is possible to install the Operator and HyperConverged object using the Openshift UI. We have opted to use
+It is also possible to install the Operator and HyperConverged object using the Openshift UI. We have opted to use
 the CLI to make the process more repeatable
 ====
 
 === Task: Install Virtctl
 
-Many functions we will use rely on a utility called `virtctl`. Virtctl allows us to interface with our virtual 
-machine through the control plane of Openshift. This means that we will not have to configure Openshift Networking 
-to interact with our virtual machines.
+Many functions we will use rely on a utility called `virtctl`. Virtctl allows us to interface with our virtual
+machine through the control plane of Openshift. This means that we will not have to configure Openshift Networking
+to interact with our virtual machines. OpenShift Virtualization makes the matching version of `virtctl` tool available for download from our cluster.
 
 [source,sh,role=execute]
 ----
 wget $(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged  -o json | jq -r '.spec.links[] | select(.text == "Download virtctl for Linux for x86_64") | .href')
+
 tar -xvf virtctl.tar.gz
 chmod +x virtctl
 sudo mv virtctl /usr/local/bin
@@ -351,4 +349,4 @@ https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring
 documentation^].
 
 
-With Portworx and OSV installed, we are now ready to move on to the next lesson.
+With Portworx and OpenShift Virtualization installed and configured, we are now ready to move on to the next lab.
