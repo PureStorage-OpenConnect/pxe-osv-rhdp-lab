@@ -18,10 +18,10 @@ ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
 
 === Task 2: Create an Openshift Secret with our SSH key:
 
-
 [source,sh,role=execute]
 ----
 ID_RSA_PUB=$(cat ~/.ssh/id_rsa.pub)
+
 cat << EOF | oc apply -f -
 ---
 apiVersion: v1
@@ -90,14 +90,12 @@ EOF
 
 The above created a VM called `centos-stream9-example` that we will use for the rest of the labs.
 
-Once the VM is running we can log into this VM using this command (if you do so make sure to exit again by pressing `Ctrl-D` or typing `exit` followed by pressing `Enter`):
-
 ====
 [TIP]
-
-It can take a couple of minutes for the VM to provision and start.
+It can take a couple of minutes for the VM to provision and start. If the next command fails wait a few seconds and try again until it succeeds.
 ====
 
+Once the VM is running we can log into this VM using this command (if you do so make sure to exit again by pressing `Ctrl-D` or typing `exit` followed by pressing `Enter`):
 
 [source,sh,role=execute]
 ----
@@ -135,10 +133,10 @@ image:create-vm-04.png[Select StorageClass]
 This will automatically start the virtual machine after a short
 provisioning process.
 
-____
-It can take a couple of minutes for our VM to boot the
-first time
-____
+====
+[NOTE]
+It can take a couple of minutes for our VM to boot for the first time
+====
 
 Explore the tabs for this virtual machine. We can view metrics,
 configure snapshots, and even view the YAML configuration to make
@@ -146,9 +144,9 @@ automating easy.
 
 image:create-vm-06.png[Interact with VM]
 
-____
-The Virtual Machine name will be different in your
-environment
-____
+====
+[NOTE]
+The Virtual Machine name will be different in your environment
+====
 
-Click `Next` to move on to the next challenge
+Click `Next` to move on to the next lab.
