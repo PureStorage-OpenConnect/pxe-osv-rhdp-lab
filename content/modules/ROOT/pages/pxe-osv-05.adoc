@@ -137,7 +137,8 @@ We will apply that label to our virtual machine's PVC.
 
 [source,sh,role=execute]
 ----
-oc label pvc centos-stream9-autopilot-data-disk app=autopilot --overwrite
+oc label pvc centos-stream9-autopilot-data-disk \
+  app=autopilot --overwrite
 ----
 
 [source,sh,role=execute]
@@ -162,7 +163,10 @@ until virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o St
 done
 
 # Set up the filesystem and mount the disk as /data
-virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdb && sudo mkfs.ext4 /dev/vdb1 && sudo mkdir /data && sudo mount /dev/vdb1 /data'
+virtctl ssh cloud-user@centos-stream9-autopilot \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdb && sudo mkfs.ext4 /dev/vdb1 && sudo mkdir /data && sudo mount /dev/vdb1 /data'
 ----
 
 == Task 5: Add some storage space

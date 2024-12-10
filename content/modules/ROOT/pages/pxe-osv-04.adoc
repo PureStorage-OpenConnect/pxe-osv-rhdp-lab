@@ -66,7 +66,10 @@ Let's "accidently" delete an important file:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'sudo rm /etc/fstab'
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'sudo rm /etc/fstab'
 ----
 
 Oh no! `/etc/fstab` is an important file for the operation of our linux system.
@@ -74,10 +77,13 @@ We can verify that the file is indeed missing by running:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'cat /etc/fstab'
 ----
 
-Let's fix our VM
+Let's fix our VM.
 
 === Task 4: Restore our snapshot
 
@@ -127,7 +133,10 @@ our fstab file is back in place:
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat /etc/fstab'
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'cat /etc/fstab'
 ----
 
 We can now see that the contents of the `/etc/fstab` file has been restored!

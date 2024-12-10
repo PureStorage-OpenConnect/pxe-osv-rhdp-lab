@@ -20,8 +20,6 @@ ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
 
 [source,sh,role=execute]
 ----
-ID_RSA_PUB=$(cat ~/.ssh/id_rsa.pub)
-
 cat << EOF | oc apply -f -
 ---
 apiVersion: v1
@@ -99,7 +97,9 @@ Once the VM is running we can log into this VM using this command (if you do so 
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no"
+virtctl ssh cloud-user@centos-stream9-example \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no"
 ----
 
 == Step 2 - Deploy a Virtual Machine using the Openshift Console

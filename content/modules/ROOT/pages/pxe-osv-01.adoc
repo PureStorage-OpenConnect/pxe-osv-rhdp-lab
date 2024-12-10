@@ -282,6 +282,7 @@ We can install the HyperConverged CR using the following command:
 [source,sh,role=execute]
 ----
 cat << EOF | oc apply -f -
+---
 apiVersion: hco.kubevirt.io/v1beta1
 kind: HyperConverged
 metadata:
@@ -348,4 +349,4 @@ https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring
 documentation^].
 
 
-With Portworx and OpenShift Virtualization installed and configured, we are now ready to move on to the next lesson.
+With Portworx and OpenShift Virtualization installed and configured, we are now ready to move on to the next lab.
