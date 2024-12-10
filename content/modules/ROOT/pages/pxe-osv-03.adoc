@@ -82,26 +82,27 @@ We will now induce a failure in our OpenShift cluster.
 
 It is important to understand that in OpenShift Virtualization,
 VirtualMachines run inside pods. As we learned above, our virtual
-machine is actually running from inside a pod. Let’s find out which node
+machine is actually running from inside a pod. Let's find out which node
 our virtual machine is running on:
 
 [source,sh,role=execute]
 ----
 NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
+
 echo "Your VM is running on node: ${NODENAME}"
 ----
 
-Let’s cause a reboot of this node. We will now debug the node:
+Let's cause a reboot of this node. We will now debug the node:
 
 [source,sh,role=execute]
 ----
 oc debug node/$NODENAME
 ----
 
-____
-Running `oc debug node/$NODENAME` can take a few seconds as
-a pod needs to be attached to the node.
-____
+====
+[NOTE]
+Running `oc debug node/$NODENAME` can take a few seconds as a pod needs to be attached to the node.
+====
 
 Chroot to the host
 
@@ -138,4 +139,4 @@ Let's check to make sure our data is still there:
 virtctl ssh cloud-user@centos-stream9-example -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'cat ~/text'
 ----
 
-You are ready to move to the next challenge.
+You are ready to move to the next lab.

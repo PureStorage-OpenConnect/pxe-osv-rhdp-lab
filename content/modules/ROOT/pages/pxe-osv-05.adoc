@@ -161,12 +161,13 @@ until virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o St
     sleep 10
 done
 
+# Set up the filesystem and mount the disk as /data
 virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c '(echo g; echo n; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/vdb && sudo mkfs.ext4 /dev/vdb1 && sudo mkdir /data && sudo mount /dev/vdb1 /data'
 ----
 
 == Task 5: Add some storage space
 
-We will use the shred command to add some storage space to our virtual machine.
+We will use the `shred` command to add some storage space to our virtual machine.
 
 We could of course log in to our VM though the console, but that would require that we log in to the virtual machine with the supplied password.
 
@@ -178,7 +179,10 @@ Let's execute a command inside of our virtual machinen using `oc exec`
 
 [source,sh,role=execute]
 ----
-virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'sudo touch /data/file; sudo shred -n 1 -s 900M /data/file'&
+virtctl ssh cloud-user@centos-stream9-autopilot \
+  -i ~/.ssh/id_rsa \
+  -t "-o StrictHostKeyChecking=no" \
+  -c 'sudo touch /data/file; sudo shred -n 1 -s 900M /data/file'&
 ----
 
 === Task 5: Observe the Portworx Autopilot events

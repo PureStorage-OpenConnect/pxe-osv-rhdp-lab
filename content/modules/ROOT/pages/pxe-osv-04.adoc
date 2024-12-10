@@ -48,7 +48,7 @@ image:snapshot-vm-02.png[Take Snapshot]
 We can accept the default and select `Save`
 
 ====
-[Note]
+[NOTE]
 You will see a warning that our `cloudinitdisk` will not be
 included in this snapshot. The `cloudinitdisk` is only used to configure
 our virtual machine and provide customizations. We can safely ignore
@@ -62,7 +62,7 @@ image:snapshot-vm-03.png[Save Snapshot]
 Let's switch back to the command line. To make a change, we are simply
 going to make a change to our running virtual machine.
 
-Let's accidently delete an important file:
+Let's "accidently" delete an important file:
 
 [source,sh,role=execute]
 ----
@@ -102,12 +102,13 @@ snapshot we created earlier and click
 
 image:snapshot-vm-05.png[restore VM]
 
-____
+====
+[NOTE]
 Restoring a snapshot is a distructive operation as it
 discards all changes that were made to a virtual machine since the
 snapshot was taken. To avoid loosing data, it is possible to take a
 snapshot before restoring our virtual machine.
-____
+====
 
 Confirm the restore by clicking the `Restore` button.
 
@@ -119,7 +120,7 @@ image:snapshot-vm-06.png[start VM]
 We can check on the progress of our virtual machine’s boot by clicking
 on the `Console` or `Overview` tab.
 
-Task 5: Verify our restore
+=== Task 5: Verify our restore
 
 After a couple of minutes, our VM should be running. Let’s verify that
 our fstab file is back in place:
