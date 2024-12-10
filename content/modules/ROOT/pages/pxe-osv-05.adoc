@@ -93,7 +93,6 @@ apiVersion: autopilot.libopenstorage.org/v1alpha1
 kind: AutopilotRule
 metadata:
  name: volume-resize
- namespace: vmtest
 spec:
   ##### selector filters the objects affected by this rule given labels
   selector:
