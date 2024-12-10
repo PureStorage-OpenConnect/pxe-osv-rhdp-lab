@@ -104,8 +104,14 @@ We can now apply the specification:
 oc apply -f $HOME/px-spec.yaml
 ----
 
-The install can take about 5 minutes. We can watch the containers come
-up by running:
+====
+[NOTE]
+
+The Portworx cluster pods can take up to 10 minutes to start. During this time, you will see pods restart.
+This is expected behavior.
+====
+
+We can watch the containers come up by running:
 
 [source,sh,role=execute]
 ----
@@ -114,13 +120,6 @@ watch oc -n portworx get pods
 
 When all three of the `px-cluster` pods have a Ready status of `1/1` we
 can press `ctrl-c` to exit out of our watch command.
-
-====
-[NOTE]
-
-The Portworx cluster pods can take up to 10 minutes to start. During this time, you will see pods restart.
-This is expected behavior.
-====
 
 === Task: Check the Portworx cluster status
 
