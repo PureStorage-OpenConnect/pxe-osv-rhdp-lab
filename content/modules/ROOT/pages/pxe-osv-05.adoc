@@ -178,14 +178,14 @@ One of the advantages of an extensible framework like Openshift is that much of 
 
 === Task 6: Start filling the disk
 
-Let's execute a command inside of our virtual machinen using `oc exec`
+Let's execute a command to write data to the `/data` disk inside of our virtual machine:
 
 [source,sh,role=execute]
 ----
 virtctl ssh cloud-user@centos-stream9-autopilot \
   -i ~/.ssh/id_rsa \
   -t "-o StrictHostKeyChecking=no" \
-  -c 'sudo touch /data/file; sudo shred -n 1 -s 900M /data/file'&
+  -c 'sudo touch /data/file; sudo shred -n 1 -s 990M /data/file'
 ----
 
 === Task 5: Observe the Portworx Autopilot events
