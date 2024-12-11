@@ -37,8 +37,6 @@ spec:
       name: centos-stream9-autopilot-data-disk
       annotations:
         cdi.kubevirt.io/storage.usePopulator: "false"
-      labels:
-        expand: yes
     spec:
       preallocation: false
       source:
@@ -97,7 +95,7 @@ spec:
   ##### selector filters the objects affected by this rule given labels
   selector:
     matchLabels:
-      expand: yes
+      expand: true
   ##### conditions are the symptoms to evaluate. All conditions are AND'ed
   conditions:
     # volume usage should be less than 30%
@@ -120,20 +118,20 @@ EOF
 
 The rule will:
 
-* *_Line 9:_* Target PVCs with the Kubernetes label `expand: yes`
+* *_Line 9:_* Target PVCs with the Kubernetes label `expand: true`
 * *_Lines 14-17:_* Monitor if capacity usage grows to or above 30%
 * *_Line 24:_* Automatically grow the volume and underlying filesystem by 50% of the current volume size if usage above 30% is detected
 * *_Line 26:_* Not grow the volume to more than 20Gi
 
 === Task 3: Label our Virtual Machine PVC
 
-Autopilot will expand PVCs that have the `expand=yes` label applied.
+Autopilot will expand PVCs that have the `expand=true` label applied.
 We will apply that label to our virtual machine's PVC.
 
 [source,sh,role=execute]
 ----
 oc label pvc centos-stream9-autopilot-data-disk \
-  expand=yes --overwrite
+  expand=true --overwrite
 ----
 
 [source,sh,role=execute]
