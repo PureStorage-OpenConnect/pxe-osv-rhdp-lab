@@ -40,6 +40,26 @@ oc get nodes
 
 To install Portworx, we first need to install the Portworx Operator.
 
+=== Task: Enable User Workload Monitoring
+
+Newer OpenShift versions do not support the Portworx Prometheus deployment. As a result, you must enable monitoring for user-defined projects before installing the Portworx Operator. Use the instructions in this section to configure the OpenShift Prometheus deployment to monitor Portworx metrics.
+
+To integrate OpenShift’s monitoring and alerting system with Portworx, create a `cluster-monitoring-config` ConfigMap in the `openshift-monitoring` namespace:
+
+[source,sh,role=execute]
+----
+cat << EOF | oc apply -f -
+apiVersion: v1
+kind: ConfigMap                                                        
+metadata:                                   
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    enableUserWorkload: true
+EOF
+----
+
 === Task: Install the Portworx Operator
 
 Navigate to `Operators` > `Operator Hub` and type `Portworx` in to the
