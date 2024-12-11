@@ -106,7 +106,7 @@ Take a look at our current manifest by using the cat utility:
 
 [source,sh,role=execute]
 ----
-cat $HOME/px-spec.yaml
+cat -n $HOME/px-spec.yaml
 ----
 
 * Line 9 tells Portworx that we are installing on an Openshift cluster

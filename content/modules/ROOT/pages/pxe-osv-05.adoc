@@ -38,7 +38,7 @@ spec:
       annotations:
         cdi.kubevirt.io/storage.usePopulator: "false"
       labels:
-        app: autopilot
+        expand: true
     spec:
       preallocation: false
       source:
@@ -97,7 +97,7 @@ spec:
   ##### selector filters the objects affected by this rule given labels
   selector:
     matchLabels:
-      app: autopilot
+      expand: true
   ##### conditions are the symptoms to evaluate. All conditions are AND'ed
   conditions:
     # volume usage should be less than 30%
@@ -127,13 +127,13 @@ The rule will:
 
 === Task 3: Label our Virtual Machine PVC
 
-Autopilot will expand PVCs that have the `app: autopilot` label applied.
+Autopilot will expand PVCs that have the `expand=true` label applied.
 We will apply that label to our virtual machine's PVC.
 
 [source,sh,role=execute]
 ----
 oc label pvc centos-stream9-autopilot-data-disk \
-  app=autopilot --overwrite
+  expand=true --overwrite
 ----
 
 [source,sh,role=execute]
