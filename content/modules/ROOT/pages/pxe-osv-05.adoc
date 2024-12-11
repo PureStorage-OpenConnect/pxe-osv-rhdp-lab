@@ -3,6 +3,16 @@
 In this scerario, we will configure autopilot to grow a PVC in the event
 of our virtual disk runs low on space.
 
+Autopilot is a rule-based engine that responds to changes from a monitoring source. Autopilot allows you to specify monitoring conditions along with actions it should take when those conditions occur.
+
+With Autopilot, your cluster can react dynamically without your intervention to events such as:
+
+* Resizing PVCs when it is running out of capacity
+* Scaling Portworx storage pools to accommodate increasing usage
+* Rebalancing volumes across Portworx storage pools when they come unbalanced
+
+In this scenario, we will use autopilot to detect when a VMs disk is filling up, and automatically expand that disk.
+
 == Configure our Autopilot Rule
 
 === Task 1: Create a new VM for Autopilot
@@ -95,7 +105,7 @@ spec:
   ##### selector filters the objects affected by this rule given labels
   selector:
     matchLabels:
-      expand: true
+      expand: "true"
   ##### conditions are the symptoms to evaluate. All conditions are AND'ed
   conditions:
     # volume usage should be less than 30%
