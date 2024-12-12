@@ -92,8 +92,7 @@ instead, click `View installed Operators in Namespace portworx`
 
 === Task: Install Portworx StorageCluster
 
-For this step, we need to switch back to our `Terminal` tab in the
-Instruqt interface.
+For this step, we need to switch back to our `Terminal`.
 
 Grab our StorageCluster specification:
 
@@ -172,8 +171,8 @@ Let's dive into our cluster status: - All 3 nodes are online and use
 Kubernetes node names as the Portworx node IDs.
 
 * Portworx detected the block device media type as
-``STORAGE_MEDIUM_MAGNETIC'', and created a storage pool for those disks.
-If you have different types of disk, for example SSD and
+`STORAGE_MEDIUM_NVME`, and created a storage pool for those disks.
+If you have different types of disks, for example SSD and
 magnetic/rotational disk, a dedicated storage pool would be created for
 each type of device.
 
