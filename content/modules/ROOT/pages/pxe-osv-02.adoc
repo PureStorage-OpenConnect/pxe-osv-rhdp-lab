@@ -1,22 +1,22 @@
 == Scenario - Persistent Storage Volume Provisioning and Availability for Virtual Machines
 
 In this scenario, we will learn about how to provision a virtual machine
-on OpenShift Virtualization with Purestorage.
+on OpenShift Virtualization with Pure Storage.
 
 == Step 1 - Deploy a virtual machine using the OpenShift command line tool
 
-Let's start by building VM using the `oc` command line tool.
+Let's start by building a VM using the `oc` command line tool.
 
 === Task 1: Generate an SSH keypair
 
-In order to interact with our virtual machine, let's create an ssh keypair.
+In order to interact with our virtual machine, let's create an SSH keypair.
 
 [source,sh,role=execute]
 ----
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
 ----
 
-=== Task 2: Create an Openshift Secret with our SSH key:
+=== Task 2: Create an OpenShift Secret with our SSH key:
 
 [source,sh,role=execute]
 ----
@@ -32,7 +32,7 @@ data:
 EOF
 ----
 
-=== Task 3: Create an Openshift Virtual Machine
+=== Task 3: Create an OpenShift Virtual Machine
 
 [source,sh,role=execute]
 ----
@@ -86,14 +86,14 @@ spec:
 EOF
 ----
 
-The above created a VM called `centos-stream9-example` that we will use for the rest of the labs.
+The above command created a VM called `centos-stream9-example` that we will use for the rest of the labs.
 
 ====
 [TIP]
-It can take a couple of minutes for the VM to provision and start. If the next command fails wait a few seconds and try again until it succeeds.
+It can take a couple of minutes for the VM to provision and start. If the next command fails, wait a few seconds and try again until it succeeds.
 ====
 
-Once the VM is running we can log into this VM using this command (if you do so make sure to exit again by pressing `Ctrl-D` or typing `exit` followed by pressing `Enter`):
+Once the VM is running we can log into this VM using this command (if you do so make sure to exit again by pressing `Ctrl-D` or typing `exit` and pressing `Enter`):
 
 [source,sh,role=execute]
 ----
@@ -102,13 +102,13 @@ virtctl ssh cloud-user@centos-stream9-example \
   -t "-o StrictHostKeyChecking=no"
 ----
 
-== Step 2 - Deploy a Virtual Machine using the Openshift Console
+== Step 2 - Deploy a Virtual Machine using the OpenShift Console
 
 Start by logging in to the OpenShift console if you haven't already.
 
 === Task 1: Create a new VM
 
-Navigate to the Virtualzation > VirtualMachines menu
+Navigate to the Virtualzation > Virtual Machines menu
 
 image:create-vm-11.png[Select VMs]
 
@@ -116,11 +116,11 @@ Select our `vmtest` project in the upper left of the interface
 
 image:create-vm-12.png[Select Project]
 
-Click the `Create` button, and then the `From instanceType` from the menu
+Click the `Create` button, and then select `From instanceType` from the menu
 
 image:create-vm-13.png[Click Button]
 
-Select the Centos Stream image. We can also use the default instance
+Select the CentOS Stream image. We can also use the default instance
 type.
 
 image:create-vm-03-2.png[Select CentOS]
@@ -135,12 +135,11 @@ provisioning process.
 
 ====
 [NOTE]
-It can take a couple of minutes for our VM to boot for the first time
+It can take a few minutes for the VM to boot for the first time
 ====
 
 Explore the tabs for this virtual machine. We can view metrics,
-configure snapshots, and even view the YAML configuration to make
-automating easy.
+configure snapshots, and view the YAML configuration.
 
 image:create-vm-06.png[Interact with VM]
 
