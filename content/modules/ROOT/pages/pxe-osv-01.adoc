@@ -1,6 +1,6 @@
 == Scenario - Storage Classes and Storage Profiles
 
-In this scenario, we will install Portworx Enterprise on an existing OpenShift cluster, as well as creating a new default StorageClass for virtual machines.
+In this scenario, we will install Portworx Enterprise on an existing OpenShift cluster and create a new default StorageClass for virtual machines.
 
 === Creating our project
 
