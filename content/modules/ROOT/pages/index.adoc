@@ -2,17 +2,17 @@
 
 == Introduction
 
-In this lab you will learn how to operate Openshift Virtualization with Portworx to provide HA, Live Migrations, and Snapshots.
+In this lab you will learn how to operate OpenShift Virtualization with Portworx to provide high availability (HA), Live Migrations, and Snapshots.
 
-This lab focuses on hands on learning.
+This lab focuses on hands-on learning.
 
 image::px-logo.jpg[px-logo]
 
 === Lab Access
 
-The terminal window to your right is *already* logged into the lab environment as the `{bastion_ssh_user_name}` user via `ssh`.
-All steps of this lab are to be completed as the `{bastion_ssh_user_name}` user.
+The terminal window to your right is already logged into the lab environment as the `{bastion_ssh_user_name}` user via `ssh`.
+All steps in this lab are to be completed as the `{bastion_ssh_user_name}` user.
 
 The OpenShift Console can be accessed by opening a new tab in your browser at {openshift_cluster_console_url}[OpenShift Web Console^].
 
-The username is `{openshift_cluster_admin_username}` and the password is `{openshift_cluster_admin_password}`.
+Log in using the username `{openshift_cluster_admin_username}` and password `{openshift_cluster_admin_password}`.
