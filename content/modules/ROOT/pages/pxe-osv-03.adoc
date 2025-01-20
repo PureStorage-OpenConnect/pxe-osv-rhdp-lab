@@ -1,11 +1,11 @@
 == Scenario - Persistent Storage Volume Provisioning and Availability for Virtual Machines
 
-In this scenario, we will learn about how to provision a virtual machine
+In this scenario, we will learn how to provision a virtual machine
 on OpenShift Virtualization with Portworx.
 
 == Step 1 - Modify our VM
 
-Let's modify our VM to help prove that our changes are retained during a live migration and HA event.
+Let's modify our VM to help verify that our changes are retained during a live migration and HA event.
 
 Let's write some data to a file:
 
@@ -29,8 +29,8 @@ virtctl ssh cloud-user@centos-stream9-example \
 
 == Step 2 - Test Live Migrations
 
-In order for live migrations to be supported, OpenShift VirtualMachines
-need to use a PVC with a ReadWriteMany access mode. We can verify this
+In order for live migrations to be supported, OpenShift Virtual Machines
+must use a PVC with a ReadWriteMany access mode. We can verify this
 by running:
 
 [source,sh,role=execute]
@@ -40,21 +40,20 @@ oc get pvc
 
 === Task 1: Live Migrate a VM
 
-Back in the OpenShift Console, click on the `Overview` tab and take note
-of the node that our VM is running on.
+Back in the OpenShift Console, click on the `Overview` tab and note
+the node where our VM is running.
 
 image:livemigrate-vm-01.png[get ocp node]
 
 We can now migrate the VM to a new node by selecting the `Actions` menu,
-and then clicking `Migrate`
+and clicking `Migrate`
 
 image:livemigrate-vm-02.png[migrate vm]
 
 After a few moments the interface will update with the new node.
 
 It is important to understand that in OpenShift Virtualization
-VirtualMachines run inside pods. This migration spawned a new pod, on
-the destination node, and then live migrated the VM to that pod.
+VirtualMachines run inside pods. This migration spawns a new pod on the destination node and live migrates the VM to that pod.
 
 We can view the running pods by executing:
 
@@ -63,8 +62,7 @@ We can view the running pods by executing:
 oc get pods -o wide
 ----
 
-Notice that one of our pods is in the `Completed` state, this is because
-our virtual machine process is no longer in that pod!
+Notice that one of the pods is in the `Completed` state because the virtual machine process has moved to another pod.
 
 We can view the running VMs by typing:
 
@@ -90,7 +88,7 @@ virtctl ssh cloud-user@centos-stream9-example \
 We will now induce a failure in our OpenShift cluster.
 
 It is important to understand that in OpenShift Virtualization,
-VirtualMachines run inside pods. As we learned above, our virtual
+Virtual Machines run inside pods. As we learned above, our virtual
 machine is actually running from inside a pod. Let's find out which node
 our virtual machine is running on:
 
@@ -101,7 +99,7 @@ NODENAME=$(oc get pods -o wide | grep 'Running' | awk '{print $7}' | head -n 1)
 echo "Your VM is running on node: ${NODENAME}"
 ----
 
-Let's cause a reboot of this node. We will now debug the node:
+Let's reboot this node. We will now debug the node:
 
 [source,sh,role=execute]
 ----
@@ -130,11 +128,11 @@ reboot
 
 ====
 [WARNING]
-It is possible that your `showroom` lab interface (where you are reading these instructions) happens to be running on the node that you just rebooted. In that case the terminal on the right will disconnect. You will need to refresh your window until OpenShift notices that the node is down and re-schedules the showroom pod to an available node.
+It is possible that the `showroom` lab interface (where you are reading these instructions) is running on the node that you just rebooted. In that case the terminal on the right will disconnect. You will need to refresh your window until OpenShift notices that the node is down and re-schedules the showroom pod to an available node.
 
 To speed up the re-creation of the pod you can also find the showroom pod in the showroom namespace and delete the currently running pod.
 ====
-
+nnh
 Let's watch our VM and pod status in the default namespace:
 
 [source,sh,role=execute]
