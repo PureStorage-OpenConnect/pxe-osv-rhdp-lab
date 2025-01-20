@@ -1,7 +1,6 @@
 == Scenario - Automatic storage management with Autopilot
 
-In this scerario, we will configure autopilot to grow a PVC in the event
-of our virtual disk runs low on space.
+In this scenario, we will configure Autopilot to grow a PVC when our virtual disk runs low on free space.
 
 Autopilot is a rule-based engine that responds to changes from a monitoring source. Autopilot allows you to specify monitoring conditions along with actions it should take when those conditions occur.
 
@@ -11,14 +10,14 @@ With Autopilot, your cluster can react dynamically without your intervention to 
 * Scaling Portworx storage pools to accommodate increasing usage
 * Rebalancing volumes across Portworx storage pools when they come unbalanced
 
-In this scenario, we will use autopilot to detect when a VMs disk is filling up, and automatically expand that disk.
+In this scenario, we will use Autopilot to detect when a VM's disk is filling up, and automatically expand that disk.
 
 == Configure our Autopilot Rule
 
 === Task 1: Create a new VM for Autopilot
 
-Let's create a new VM to test out autopilot. This VM will have an additional data disk. We will mount
-this disk and start filling it up with space. We will also use the secret holding the public ssh key that we previously created.
+Let's create a new VM to test out Autopilot. This VM will have an additional data disk. We will mount
+this disk and start filling it up with space. We will also use the secret holding the public SSH key that we previously created.
 
 [source,sh,role=execute]
 ----
@@ -155,7 +154,7 @@ Take note of the size of our PVC!
 
 === Task 4: Format and mount our data disk
 
-Because this is a new VM, let's format our data bisk and mount it to `/data`
+Because this is a new VM, let's format our data disk and mount it to `/data`
 
 [source,sh,role=execute]
 ----
@@ -178,7 +177,7 @@ We will use the `shred` command to add some storage space to our virtual machine
 
 We could of course log in to our VM though the console, but that would require that we log in to the virtual machine with the supplied password.
 
-One of the advantages of an extensible framework like Openshift is that much of the information about our environment is stored as metadata.
+One of the advantages of an extensible framework like OpenShift is that much of the information about our environment is stored as metadata.
 
 === Task 6: Start filling the disk
 
@@ -248,9 +247,9 @@ We can now observe the freespace in our virtual machine by running:
 virtctl ssh cloud-user@centos-stream9-autopilot -i ~/.ssh/id_rsa -t "-o StrictHostKeyChecking=no" -c 'df -h'
 ----
 
-Notice the size of the data disk at mounted at `/data`
+Notice the size of the data disk mounted at `/data`
 
-You've just configured Portworx Autopilot and observed how it can perform automated capacity management based on rules you configure, and be able to ``right size'' your underlying persistent storage as it is needed!
+You've just configured Portworx Autopilot and observed how it can perform automated capacity management based on rules you configure, and be able to ``right-size'' your underlying persistent storage as it is needed!
 
 === Useful links:
 
