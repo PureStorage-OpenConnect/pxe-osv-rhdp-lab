@@ -1,6 +1,6 @@
 == Scenario - Storage Classes and Storage Profiles
 
-In this scerario, we will be install Portworx Enterprise on an existing openshift cluster, as well as creating a new default StorageClass for virtual machines.
+In this scenario, we will be install Portworx Enterprise on an existing OpenShift cluster, as well as creating a new default StorageClass for virtual machines.
 
 === Creating our project
 
@@ -11,15 +11,14 @@ For this lab, we will be using a new project. In the terminal window execute the
 oc new-project vmtest
 ----
 
-=== Reminder: Accessing the Openshift Console
+=== Reminder: Accessing the OpenShift Console
 
 You can connect to the terminal in the windows to the right.
 
 ====
 [TIP]
 
-The {openshift_cluster_console_url}[OpenShift Web Console^] tab will open in a new browser.
-window.
+The {openshift_cluster_console_url}[OpenShift Web Console^] tab will open in a new browser window.
 
 The username is `{openshift_cluster_admin_username}` and the password is `{openshift_cluster_admin_password}`
 ====
@@ -62,8 +61,7 @@ EOF
 
 === Task: Install the Portworx Operator
 
-Navigate to `Operators` > `Operator Hub` and type `Portworx` in to the
-filter as seen in this screenshot:
+Navigate to `Operators` > `Operator Hub` and type `Portworx` in to the filter, as seen in this screenshot:
 
 .install-operator
 image:02-pxeinstall-installoperator-01.png[install-operator]
@@ -104,7 +102,7 @@ curl -o $HOME/px-spec.yaml 'https://install.portworx.com/3.1.6?operator=true&mc=
 Take a look at our current manifest by using the cat utility:
 
 [source,sh,role=execute]
-----
+----Create a new project"
 cat -n $HOME/px-spec.yaml
 ----
 
@@ -210,8 +208,8 @@ still need a storage class to provision virtual machine disks.
 
 === Task: View existing storage classes
 
-Portworx deploys serveral pre-configured storage classes when the
-storage cluster was created. These storage classes offer a veriety of
+Portworx deploys several pre-configured storage classes when the
+storage cluster was created. These storage classes offer a variety of
 configuration options. To view the current storage classes run:
 
 [source,sh,role=execute]
@@ -294,7 +292,7 @@ Profiles.
 
 === Task: Install the HyperConverged CR
 
-The OpenShift Virtualization operator has already been installed for out environment. Now that the Portworx StorageCluster has been deployed and we have created the default storage class we can create the `HyperConverged` object that actually deploys OpenShift Virtualization to our cluster.
+The OpenShift Virtualization operator has already been installed for our environment. Now that the Portworx StorageCluster has been deployed and we have created the default storage class we can create the `HyperConverged` object that actually deploys OpenShift Virtualization to our cluster.
 
 We can install the HyperConverged CR using the following command:
 
@@ -346,11 +344,11 @@ sudo mv virtctl /usr/local/bin
 === Task: View the Storage Profile
 
 Storage Profiles provide recommended storage settings based on an
-associate storage class. Storage profiles are automatically created in
+associated storage class. Storage profiles are automatically created in
 Openshift when a new storage class is created.
 
 Portworx sets desired parameters when using the CSI provider, including
-the prefered access mode.
+the preferred access mode.
 
 We can see the current configuration of our new storage profile by
 running:
@@ -361,7 +359,7 @@ oc get storageprofile px-csi-vm -o yaml
 ----
 
 We can see under the `.status` node a list of access modes. The first
-access mode: RWX in filesystem mode will be prefered.
+access mode: RWX in filesystem mode will be preferred.
 
 For further details on storage clusters, see the
 https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)[Openshift
