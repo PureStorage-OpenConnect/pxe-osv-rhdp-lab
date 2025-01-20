@@ -3,7 +3,7 @@
 In this scerario, we will create a virtual machine snapshot.
 
 We have created a new virtual machine that we will be using for this
-excercise.
+exercise.
 
 == Virtual Machine Snapshots
 
@@ -62,7 +62,7 @@ image:snapshot-vm-03.png[Save Snapshot]
 Let's switch back to the command line. To make a change, we are simply
 going to make a change to our running virtual machine.
 
-Let's "accidently" delete an important file:
+Let's "accidentally" delete an important file:
 
 [source,sh,role=execute]
 ----
@@ -72,7 +72,7 @@ virtctl ssh cloud-user@centos-stream9-example \
   -c 'sudo rm /etc/fstab'
 ----
 
-Oh no! `/etc/fstab` is an important file for the operation of our linux system.
+Oh no! `/etc/fstab` is an important file for the operation of our Linux system.
 We can verify that the file is indeed missing by running:
 
 [source,sh,role=execute]
@@ -87,7 +87,7 @@ Let's fix our VM.
 
 === Task 4: Restore our snapshot
 
-Let's log back in to the Openshift Console.
+Let's log back in to the OpenShift Console.
 
 Click on the `Virtualization` menu item, followed by `VirtualMachines`.
 We can then find the virtual machine we will be using for this snapshot.
