@@ -279,7 +279,7 @@ We also specified that the volumeBindingMode should be
 volume.
 
 See the
-https://docs.portworx.com/portworx-enterprise/3.1/platform/openshift/ocp-bare-metal/operations/storage-operations/manage-kubevirt-vms)[Portworx Documentation^] for further details.
+https://docs.portworx.com/portworx-enterprise/3.1/platform/openshift/ocp-bare-metal/operations/storage-operations/manage-kubevirt-vms[Portworx Documentation^] for further details.
 
 Also note that the `provisioner` is set to `pxd.portworx.com`. This
 means that our storage class will be using CSI rather than the in-tree
@@ -362,7 +362,7 @@ We can see under the `.status` node a list of access modes. The first
 access mode: RWX in filesystem mode will be preferred.
 
 For further details on storage clusters, see the
-https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html)[Openshift
+https://docs.openshift.com/container-platform/4.16/virt/storage/virt-configuring-storage-profile.html[Openshift
 documentation^].
 
 
