@@ -49,8 +49,8 @@ To integrate OpenShift’s monitoring and alerting system with Portworx, create 
 ----
 cat << EOF | oc apply -f -
 apiVersion: v1
-kind: ConfigMap                                                        
-metadata:                                   
+kind: ConfigMap
+metadata:
   name: cluster-monitoring-config
   namespace: openshift-monitoring
 data:
@@ -102,7 +102,7 @@ curl -o $HOME/px-spec.yaml 'https://install.portworx.com/3.1.6?operator=true&mc=
 Take a look at our current manifest by using the cat utility:
 
 [source,sh,role=execute]
-----Create a new project"
+----
 cat -n $HOME/px-spec.yaml
 ----
 
