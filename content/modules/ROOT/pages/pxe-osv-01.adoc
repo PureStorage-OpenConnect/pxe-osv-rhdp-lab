@@ -326,6 +326,102 @@ It is also possible to install the Operator and HyperConverged object using the 
 the CLI to make the process more repeatable
 ====
 
+=== Patch the StorageProfile to default to RWX filesystem
+A recent change to the Containerized Data Importer (CDI) can cause issues when provisioning virtual machines with Portworx storage. 
+Specifically, the default `StorageProfile` associated with the Portworx StorageClass may not support the necessary access modes.
+
+The script locates all StorageClasses provisioned by Portworx, then updates their corresponding StorageProfiles to:
+
+* Set RWX + Filesystem as the preferred access mode
+* Include support for RWO with both Filesystem and Block volume modes
+* Use `csi-clone` as the default cloning strategy for improved compatibility with DataVolumes
+* Clean up existing PVCs, DataVolumes, and import cron jobs to avoid conflicts after the patch
+
+Paste in the  script to create the file `patch_storageprofiles.sh`
+
+[source,sh,role=execute]
+----
+cat <<EOF > patch_storageprofiles.sh
+#!/bin/bash
+
+set -euo pipefail
+
+NAMESPACE="openshift-virtualization-os-images"
+PROVISIONER="pxd.portworx.com"
+
+echo "Finding StorageClasses with provisioner '\${PROVISIONER}'..."
+
+STORAGE_CLASSES=\$(kubectl get storageclass -o json | jq -r \
+  --arg prov "\${PROVISIONER}" \
+  '.items[] | select(.provisioner == \$prov) | .metadata.name')
+
+if [[ -z "\${STORAGE_CLASSES}" ]]; then
+  echo "No matching StorageClasses found with provisioner \${PROVISIONER}"
+  exit 0
+fi
+
+# Save desired StorageProfile spec JSON to a temporary file
+SPEC_FILE=\$(mktemp)
+cat > "\${SPEC_FILE}" <<EOF_SPEC
+{
+  "claimPropertySets": [
+    {
+      "accessModes": ["ReadWriteMany"],
+      "volumeMode": "Filesystem"
+    },
+    {
+      "accessModes": ["ReadWriteOnce"],
+      "volumeMode": "Block"
+    },
+    {
+      "accessModes": ["ReadWriteOnce"],
+      "volumeMode": "Filesystem"
+    }
+  ],
+  "cloneStrategy": "csi-clone",
+  "dataImportCronSourceFormat": "pvc"
+}
+EOF_SPEC
+
+echo "Updating corresponding StorageProfiles..."
+
+for sc in \${STORAGE_CLASSES}; do
+  echo "Patching StorageProfile: \${sc}"
+  PATCH_FILE=\$(mktemp)
+
+  jq -n --slurpfile spec "\${SPEC_FILE}" \
+    '[{"op": "replace", "path": "/spec", "value": \$spec[0]}]' > "\${PATCH_FILE}"
+
+  if kubectl patch storageprofile "\${sc}" --type='json' -p "\$(cat "\${PATCH_FILE}")"; then
+    echo "Patched \${sc} successfully"
+  else
+    echo "Failed to patch \${sc} — continuing..."
+  fi
+
+  rm -f "\${PATCH_FILE}"
+done
+
+rm -f "\${SPEC_FILE}"
+
+echo "Cleaning up PVCs, DVs, and DataImportCrons in namespace: \${NAMESPACE}"
+
+kubectl delete pvc --all -n "\${NAMESPACE}" --ignore-not-found=true
+kubectl delete dv --all -n "\${NAMESPACE}" --ignore-not-found=true
+kubectl delete dataimportcron --all -n "\${NAMESPACE}" --ignore-not-found=true
+
+echo "Done!"
+EOF
+----
+
+Next, make the script executable and run the script.
+
+[source,sh,role=execute]
+----
+chmod +x patch_storageprofiles.sh & ./patch_storageprofiles.sh 
+----
+
+
+
 === Task: Install Virtctl
 
 Many functions we will use rely on a utility called `virtctl`. Virtctl allows us to interface with our virtual
