@@ -417,10 +417,25 @@ Next, make the script executable and run the script.
 
 [source,sh,role=execute]
 ----
-chmod +x patch_storageprofiles.sh & ./patch_storageprofiles.sh 
+chmod +x patch_storageprofiles.sh && ./patch_storageprofiles.sh 
 ----
 
+Let's check the PVCs for the vm images.  You should see the status as Bound and the Access MOde as RWX
 
+[source,sh,role=execute]
+----
+oc get pvc -n openshift-virtualization-os-images
+----
+
+[source,sh,role=execute]
+----
+NAME                          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+centos-stream9-e065d9079064   Bound    pvc-cbfe2447-6a3d-4eea-ada5-143a33960d2b   33Gi       RWX            px-csi-vm      <unset>                 5m52s
+fedora-4fcda30051d5           Bound    pvc-4d1efdcc-fec3-47e5-9f98-4ad233ae0f51   33Gi       RWX            px-csi-vm      <unset>                 5m52s
+rhel10-beta-da1c0cdc24da      Bound    pvc-f484971c-10ce-4036-82a5-cb2c656c43e6   33Gi       RWX            px-csi-vm      <unset>                 5m51s
+rhel8-833d0f124287            Bound    pvc-a36b7e73-6f67-43a7-b0b7-bff135f4ce0f   33Gi       RWX            px-csi-vm      <unset>                 5m51s
+rhel9-0c9204ba64c2            Bound    pvc-0879b51d-708c-4b37-9483-ae667e047954   33Gi       RWX            px-csi-vm      <unset>                 5m51s
+----
 
 === Task: Install Virtctl
 
