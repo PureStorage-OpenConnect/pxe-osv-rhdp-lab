@@ -88,12 +88,14 @@ EOF
 
 The above command created a VM called `centos-stream9-example` that we will use for the rest of the labs.
 
-====
-[TIP]
-It can take a couple of minutes for the VM to provision and start. If the next command fails, wait a few seconds and try again until it succeeds.
-====
+We can check the status of the VM running this command.
 
-Once the VM is running we can log into this VM using this command (if you do so make sure to exit again by pressing `Ctrl-D` or typing `exit` and pressing `Enter`):
+[source,sh,role=execute]
+----
+watch oc get vms
+----
+
+Once the VM is running, ctrl-c to exit.  We can then log into this VM using this command (if you do so make sure to exit again by pressing `Ctrl-D` or typing `exit` and pressing `Enter`):
 
 [source,sh,role=execute]
 ----
