@@ -1,0 +1,10 @@
+---
+# TODO: Module 2 Solve — Persistent Storage Volume Provisioning (1)
+- name: Module 2 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: TODO
+    ansible.builtin.debug:
+      msg: "solve not implemented yet"

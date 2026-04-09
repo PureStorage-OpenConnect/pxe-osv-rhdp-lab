@@ -1,0 +1,12 @@
+---
+# TODO: Module 5 Validation — Automatic Storage Management with Autopilot
+- name: Module 5 Validation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: TODO
+    validation_check:
+      check: false
+      pass_msg: "Module 5 passed"
+      error_msg: "Module 5 not implemented yet"

@@ -1,0 +1,10 @@
+---
+# TODO: Module 5 Solve — Automatic Storage Management with Autopilot
+- name: Module 5 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: TODO
+    ansible.builtin.debug:
+      msg: "solve not implemented yet"

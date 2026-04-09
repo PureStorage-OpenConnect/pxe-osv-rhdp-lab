@@ -1,9 +1,7 @@
 ---
-type: showroom
+type: zero-touch
 
-# Set the left column width to 30%
 default_width: 30
-# Persist the URL state so browser refresh doesn't reset the UI
 persist_url_state: true
 
 view_switcher:
@@ -16,3 +14,28 @@ tabs:
 - name: Terminal
   path: /wetty
   port: 443
+
+antora:
+  name: modules
+  dir: www
+  modules:
+  - name: pxe-osv-01
+    label: "Storage Classes and Storage Profiles"
+    scripts: [solve, validation]
+    solveButton: true
+  - name: pxe-osv-02
+    label: "Persistent Storage Volume Provisioning (1)"
+    scripts: [solve, validation]
+    solveButton: true
+  - name: pxe-osv-03
+    label: "Persistent Storage Volume Provisioning (2)"
+    scripts: [solve, validation]
+    solveButton: true
+  - name: pxe-osv-04
+    label: "Virtual Machine Snapshots"
+    scripts: [solve, validation]
+    solveButton: true
+  - name: pxe-osv-05
+    label: "Automatic Storage Management with Autopilot"
+    scripts: [solve, validation]
+    solveButton: true

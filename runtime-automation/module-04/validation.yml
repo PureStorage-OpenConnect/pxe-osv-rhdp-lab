@@ -1,0 +1,12 @@
+---
+# TODO: Module 4 Validation — Virtual Machine Snapshots
+- name: Module 4 Validation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: TODO
+    validation_check:
+      check: false
+      pass_msg: "Module 4 passed"
+      error_msg: "Module 4 not implemented yet"

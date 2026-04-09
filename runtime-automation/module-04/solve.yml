@@ -1,0 +1,10 @@
+---
+# TODO: Module 4 Solve — Virtual Machine Snapshots
+- name: Module 4 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: TODO
+    ansible.builtin.debug:
+      msg: "solve not implemented yet"

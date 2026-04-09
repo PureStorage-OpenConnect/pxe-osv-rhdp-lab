@@ -1,0 +1,10 @@
+---
+# TODO: Module 1 Solve — Storage Classes and Storage Profiles
+- name: Module 1 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: TODO
+    ansible.builtin.debug:
+      msg: "solve not implemented yet"

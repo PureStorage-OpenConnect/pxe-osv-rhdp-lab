@@ -1,0 +1,12 @@
+---
+# TODO: Module 3 Validation — Persistent Storage Volume Provisioning (2)
+- name: Module 3 Validation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: TODO
+    validation_check:
+      check: false
+      pass_msg: "Module 3 passed"
+      error_msg: "Module 3 not implemented yet"
